@@ -1,0 +1,236 @@
+{
+ "name": "evalset-v2-mini",
+ "split": "mini",
+ "sim_config": {
+  "seed": 303,
+  "n_drivers": 4,
+  "n_trips": 18,
+  "trip_seconds": [
+   200,
+   320
+  ],
+  "incident_rate": 0.9,
+  "incident_weights": [
+   0.35,
+   0.15,
+   0.25,
+   0.25
+  ],
+  "negative_rate": 0.9,
+  "note_rate": 0.3,
+  "start_epoch_ms": 1767600000000,
+  "center": [
+   40.0,
+   -100.0
+  ]
+ },
+ "per_class": 2,
+ "cases": [
+  {
+   "case_key": "mini-00",
+   "incident_id": "4cb58bae-b869-5452-9584-3e403d77fd7c",
+   "trip_id": "a5ba1ab2-417a-49cd-a048-9bd0e942b915",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1768141292500,
+    1768141293500
+   ],
+   "label_evidence_event_ids": [
+    "f49d391a-94f0-4118-88a3-aedc11352d07"
+   ]
+  },
+  {
+   "case_key": "mini-01",
+   "incident_id": "915c330e-a26d-5ebe-aea3-acfb4deead70",
+   "trip_id": "62ba2dac-dbe4-4d91-8c46-7d6d2a3b68de",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1767858014500,
+    1767858016500
+   ],
+   "label_evidence_event_ids": [
+    "e35f3045-d391-48f9-b92c-93d72e073699",
+    "ab8d748a-4a1b-4678-86cc-fa53d53d0541",
+    "b5081206-6e4a-49e4-a1c8-7302e2b9dfc6"
+   ]
+  },
+  {
+   "case_key": "mini-02",
+   "incident_id": "180f5201-abf4-57f5-b028-b9c8878c3949",
+   "trip_id": "9e04f60d-440d-4fae-9e88-0febad0a5fe6",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1768562131500,
+    1768562132500
+   ],
+   "label_evidence_event_ids": [
+    "6a01e929-d0af-4fb4-a13d-b67a5dce3ce7"
+   ]
+  },
+  {
+   "case_key": "mini-03",
+   "incident_id": "9269a924-4ab3-5a8b-9b6a-c2c2444f2ccd",
+   "trip_id": "15ca1733-b038-4196-8ea0-e66469e8bfe1",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1767643709500,
+    1767643710500
+   ],
+   "label_evidence_event_ids": [
+    "6afb777b-3517-4299-9848-fed4822e6443"
+   ]
+  },
+  {
+   "case_key": "mini-04",
+   "incident_id": "36b21d29-5a8d-55fc-a21f-f292e5ab16f6",
+   "trip_id": "739ea294-5b1b-4e8b-bf45-53c446e1aae3",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768484676500,
+    1768484678500
+   ],
+   "label_evidence_event_ids": [
+    "f7345c5c-d751-4290-a66c-2f743b2b140a",
+    "649ae060-f6c2-4629-8429-f40aa7a80273",
+    "082b1e5d-bff0-4530-ae1a-bcd0acfd3ca3"
+   ]
+  },
+  {
+   "case_key": "mini-05",
+   "incident_id": "f9dac366-319c-574f-a23e-ed1d3a2ef97f",
+   "trip_id": "e72284e9-0e86-4523-86a0-9bd1e4256fb3",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768246083500,
+    1768246085500
+   ],
+   "label_evidence_event_ids": [
+    "71104077-b35d-411e-804c-f3cd02ff663f",
+    "0f347691-34e8-44bb-8747-d8ffe80c3635",
+    "8627f500-0d8c-43d9-a8f7-655e966539cb"
+   ]
+  },
+  {
+   "case_key": "mini-06",
+   "incident_id": "2b497151-78ce-55c2-8c3b-3cbfa5aee683",
+   "trip_id": "62e29963-9843-4a5f-83f3-ab42ff22ecb1",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1768131741500,
+    1768131772500
+   ],
+   "label_evidence_event_ids": [
+    "da8e4eed-fcdb-472c-8c38-c5a8712ae707",
+    "0e18be74-7f9e-4721-ac06-8de11750b545",
+    "8f341253-8ca1-4129-98e8-ead2f0642240",
+    "eba9af1b-67c6-4007-b621-b23a54f95a3f",
+    "bd80da75-bdba-444c-a425-25a23643b44c"
+   ]
+  },
+  {
+   "case_key": "mini-07",
+   "incident_id": "2f0dda29-c73f-56f9-ac97-1094a54dbd9d",
+   "trip_id": "ffb2556c-1e9b-43e0-ae24-0a53506f09c6",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1768414631500,
+    1768414663500
+   ],
+   "label_evidence_event_ids": [
+    "101f7655-6284-46a9-bf27-6278b77b8870",
+    "7921f1e1-b12a-4105-a076-2bd9e65cacac",
+    "ed63e22b-876f-4c18-bf0b-410e358d0eed",
+    "d3e31de6-97f8-4cee-bf53-d25bd9f4595e",
+    "a8acb071-1db9-4929-973f-09c949696c42"
+   ]
+  },
+  {
+   "case_key": "mini-08",
+   "incident_id": "aad6dce6-fb27-5d12-8bcc-f140c9983441",
+   "trip_id": "d2083589-a338-4543-9707-a74026f8f2f5",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1768450828500,
+    1768450829500
+   ],
+   "label_evidence_event_ids": [
+    "5bed01b1-ea0e-4a2a-8824-136bdb40870c"
+   ]
+  },
+  {
+   "case_key": "mini-09",
+   "incident_id": "d1121568-e66a-5234-8ac9-bfa28d05cbc0",
+   "trip_id": "4938db6b-f7a0-4738-b32f-683aa98b1c79",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1768343134500,
+    1768343135500
+   ],
+   "label_evidence_event_ids": [
+    "a9600159-8b45-4dfe-b5af-ea8cbc449ce8"
+   ]
+  }
+ ],
+ "stats": {
+  "detected_incidents": 29,
+  "available_by_expected": {
+   "hard_braking": 8,
+   "crash": 4,
+   "near_miss": 9,
+   "phone_distraction": 5,
+   "no_incident": 3
+  },
+  "selected_by_expected": {
+   "hard_braking": 2,
+   "crash": 2,
+   "near_miss": 2,
+   "phone_distraction": 2,
+   "no_incident": 2
+  },
+  "selected_by_truth_source": {
+   "incident": 8,
+   "hard_negative": 2,
+   "unlabeled": 0
+  },
+  "detector_kind_mismatch_selected": 2,
+  "injected_incidents": 26,
+  "detector_missed_incidents": {
+   "hard_braking": 0,
+   "crash": 0,
+   "near_miss": 0,
+   "phone_distraction": 0
+  }
+ },
+ "db_fingerprint": "52531a6e5c7da819",
+ "dataset_hash": "a8afa96400fc64a9"
+}

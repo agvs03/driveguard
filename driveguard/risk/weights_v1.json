@@ -1,0 +1,18 @@
+{
+  "version": "weights-v1",
+  "notes": "Weights sum to 100, so a factor's contribution is in score points. Normalisation is linear between floor and cap, clipped to [0, 1].",
+  "factors": {
+    "hard_brake_rate": {"weight": 20, "floor": 0.0, "cap": 20.0, "unit": "hard brakes + near misses per 100 km",
+                         "description": "Frequency of detected hard-braking and near-miss incidents"},
+    "max_decel_g":     {"weight": 10, "floor": 0.3, "cap": 0.8,  "unit": "g",
+                         "description": "Strongest non-crash longitudinal deceleration"},
+    "speeding_share":  {"weight": 20, "floor": 0.0, "cap": 0.5,  "unit": "fraction of moving seconds",
+                         "description": "Share of moving time more than 5% over the posted limit"},
+    "phone_moving_s":  {"weight": 25, "floor": 0.0, "cap": 60.0, "unit": "seconds",
+                         "description": "Seconds of phone screen use while moving (from phone_distraction incidents)"},
+    "night_share":     {"weight": 5,  "floor": 0.0, "cap": 1.0,  "unit": "fraction of trip time",
+                         "description": "Share of GPS samples between 22:00 and 05:00 UTC"},
+    "crash":           {"weight": 20, "floor": 0.0, "cap": 1.0,  "unit": "flag",
+                         "description": "Whether a crash incident was detected"}
+  }
+}

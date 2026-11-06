@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "driveguard"
+version = "0.1.0"
+description = "Multi-agent investigation platform for risky driving events (synthetic data only)"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.7,<3",
+    "mcp>=2.3,<3",        # v2 API (MCPServer); v1's FastMCP is gone
+    "pyjwt>=2.8,<3",
+    "uvicorn>=0.30",
+    "starlette>=1.0,<2",  # reviewer API (also a transitive dep of mcp; declared because we import it)
+    "anthropic>=2.6,<3",  # Messages API: strict tools, output_config, server-side fallbacks
+]
+
+[project.optional-dependencies]
+# Upper pins work around CPython 3.10.0's dataclass(slots=True) bug (fixed in
+# 3.10.1), which crashes pytest 9.2 and recent Hypothesis. Lift them after
+# moving to a newer Python (see docs/DECISIONS.md M-3).
+dev = ["pytest>=8.3,<9", "pytest-asyncio>=0.23", "hypothesis>=6.100,<6.113"]
+
+[project.scripts]
+driveguard = "driveguard.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["driveguard*"]
+
+[tool.setuptools.package-data]
+driveguard = ["store/*.sql", "risk/*.json"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = ["slow: ingestion-heavy, end-to-end, HTTP and red-team suites (run in CI; skip locally with -m 'not slow')"]

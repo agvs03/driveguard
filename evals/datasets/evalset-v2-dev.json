@@ -1,0 +1,758 @@
+{
+ "name": "evalset-v2-dev",
+ "split": "dev",
+ "sim_config": {
+  "seed": 101,
+  "n_drivers": 12,
+  "n_trips": 90,
+  "trip_seconds": [
+   240,
+   480
+  ],
+  "incident_rate": 0.8,
+  "incident_weights": [
+   0.35,
+   0.15,
+   0.25,
+   0.25
+  ],
+  "negative_rate": 0.8,
+  "note_rate": 0.3,
+  "start_epoch_ms": 1767600000000,
+  "center": [
+   40.0,
+   -100.0
+  ]
+ },
+ "per_class": 8,
+ "cases": [
+  {
+   "case_key": "dev-00",
+   "incident_id": "0093a62e-441c-5a67-8617-583dcfee613e",
+   "trip_id": "7f8002b0-71bb-4df3-9cb7-2005d9994dc8",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1768216407500,
+    1768216409500
+   ],
+   "label_evidence_event_ids": [
+    "153bc549-803e-43d9-be40-12f3772e6ed5",
+    "d4900983-3a64-4028-80a0-c041d95b7888",
+    "bb52fe8a-7eaf-4d6a-a3bb-86cb9f9b81ed"
+   ]
+  },
+  {
+   "case_key": "dev-01",
+   "incident_id": "1e89c362-09b1-513d-b3ba-2044e0f1ba54",
+   "trip_id": "88c613b0-4b27-49e6-bad7-4da514537f56",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1768398520500,
+    1768398522500
+   ],
+   "label_evidence_event_ids": [
+    "5f40903b-bc72-4972-9ac5-bcba82286931",
+    "a2536c5a-adec-4ae5-8f34-2ec75d978af5",
+    "83097c0e-ddc4-409b-af7b-d3bee0618a08"
+   ]
+  },
+  {
+   "case_key": "dev-02",
+   "incident_id": "30616e8f-dd95-5f9f-b3b8-f5600bec2ba3",
+   "trip_id": "aae1d139-1e17-4c81-b210-aafc20914a05",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1767948463500,
+    1767948465500
+   ],
+   "label_evidence_event_ids": [
+    "87c1060e-971e-487f-aace-20fc61133972",
+    "19fb876b-46b6-4a01-95ad-95b9e7402c34",
+    "98312d8f-cfda-4bce-97ca-2c3a3422480e"
+   ]
+  },
+  {
+   "case_key": "dev-03",
+   "incident_id": "4e53146c-62be-5b53-8508-9bb20abcb45e",
+   "trip_id": "c56809b1-3eb6-4192-846f-23f353e16db9",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1767863317500,
+    1767863319500
+   ],
+   "label_evidence_event_ids": [
+    "66cdc5eb-cd19-479b-8e82-6248bf970a39",
+    "a5e4a4b0-f524-4c9d-b682-0942169eeec2",
+    "7fb8faca-5150-4454-afff-55ad56c558c6"
+   ]
+  },
+  {
+   "case_key": "dev-04",
+   "incident_id": "8c99c6c4-10a7-54da-8408-0dd617497f3c",
+   "trip_id": "753c3c8a-1ddc-42b6-a1b4-f37453dc4cf0",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1768507974500,
+    1768507975500
+   ],
+   "label_evidence_event_ids": [
+    "eba75220-54ca-4b92-9c40-7119a93b0b3f",
+    "93e204ca-061b-4fa5-b1b8-6ace99c7e926"
+   ]
+  },
+  {
+   "case_key": "dev-05",
+   "incident_id": "9b041d2a-130c-5fad-9845-0d5f3529c9a8",
+   "trip_id": "fa433100-9a86-4c4d-9c16-7b9a1c204ad1",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1767793850500,
+    1767793851500
+   ],
+   "label_evidence_event_ids": [
+    "967c28b8-5cbd-486a-95a5-f0f9eff0680f",
+    "349b5a12-dca5-49d6-aada-d64a9dc4fb49"
+   ]
+  },
+  {
+   "case_key": "dev-06",
+   "incident_id": "b99b7887-278e-533c-960f-05af41b13c05",
+   "trip_id": "a8b2d0e1-d7c3-4f62-8124-6abbc2d5ce5c",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1767695997500,
+    1767695999500
+   ],
+   "label_evidence_event_ids": [
+    "6366183c-609c-4e35-8c80-9ce2fe5ab518",
+    "834ebb47-7d3f-4a54-9306-38bacf8a9587",
+    "dfe1af7d-94bd-45b3-b430-0d8c0667410d"
+   ]
+  },
+  {
+   "case_key": "dev-07",
+   "incident_id": "bfdfb4df-449a-545c-853e-3cbba4342516",
+   "trip_id": "79e88c44-3513-44d0-b6b2-a1e99b458959",
+   "detected_kind": "hard_braking",
+   "expected": "hard_braking",
+   "truth_source": "incident",
+   "label_kind": "hard_braking",
+   "label_window": [
+    1768618777500,
+    1768618778500
+   ],
+   "label_evidence_event_ids": [
+    "dfdbaee5-0340-4af8-b8f2-5f1826b1e0bc",
+    "0f93ed7a-4f0b-4852-9be5-ab9b13644500"
+   ]
+  },
+  {
+   "case_key": "dev-08",
+   "incident_id": "023f64a7-e442-5fde-9ec5-b044816eba37",
+   "trip_id": "1a16a4d8-6b1f-4312-adb9-6889053d833e",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1767781284500,
+    1767781285500
+   ],
+   "label_evidence_event_ids": [
+    "ea09fb05-faba-4ce2-aa81-bd43735d7655"
+   ]
+  },
+  {
+   "case_key": "dev-09",
+   "incident_id": "05dd374e-5869-561e-ac67-b5b9f57ce425",
+   "trip_id": "87aae150-a298-4cb6-9504-ddde6c45c995",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1768254772500,
+    1768254773500
+   ],
+   "label_evidence_event_ids": [
+    "3a3e8cfe-efbc-4af0-ad5c-93ad0cd38659"
+   ]
+  },
+  {
+   "case_key": "dev-10",
+   "incident_id": "5c9bfb33-41a1-5e2e-82ce-3841b86647ba",
+   "trip_id": "a348ebf8-37d9-4508-8a44-e965824b3689",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1767623919500,
+    1767623920500
+   ],
+   "label_evidence_event_ids": [
+    "a7b2b43d-9f2c-4f4c-b6a2-fb9d6bf27677"
+   ]
+  },
+  {
+   "case_key": "dev-11",
+   "incident_id": "6984871b-ebe6-57b2-aa47-a1dbe1e0d930",
+   "trip_id": "79a60dce-a183-483b-b6ba-c3b2236ce270",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1767887015500,
+    1767887016500
+   ],
+   "label_evidence_event_ids": [
+    "f9b68a5b-cb4a-47f0-a375-c5e50c10787d"
+   ]
+  },
+  {
+   "case_key": "dev-12",
+   "incident_id": "6c038776-abef-54fa-9bd6-6002247ff8d3",
+   "trip_id": "25dd3d37-ec1b-40f0-8b81-a382332fa5f7",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1768171581500,
+    1768171582500
+   ],
+   "label_evidence_event_ids": [
+    "394f368f-8e74-4e7b-906c-9faf063b026e"
+   ]
+  },
+  {
+   "case_key": "dev-13",
+   "incident_id": "86b66589-0574-527f-b113-f11596462fce",
+   "trip_id": "ed15c5a5-c009-43d6-a314-929a46ceb927",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1767799230500,
+    1767799231500
+   ],
+   "label_evidence_event_ids": [
+    "6afd47b0-39fc-461f-866e-dbc364f181c9"
+   ]
+  },
+  {
+   "case_key": "dev-14",
+   "incident_id": "96ebf786-88c6-58c4-8820-5d50b6cb4c07",
+   "trip_id": "aae1d139-1e17-4c81-b210-aafc20914a05",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1767948663500,
+    1767948664500
+   ],
+   "label_evidence_event_ids": [
+    "d51b127d-0fb9-4da0-b9ff-23eea894265b"
+   ]
+  },
+  {
+   "case_key": "dev-15",
+   "incident_id": "b2ba02a5-605d-571e-8853-63a7810a1a6e",
+   "trip_id": "b41b23f3-b740-4b27-80ee-46e2028ec661",
+   "detected_kind": "crash",
+   "expected": "crash",
+   "truth_source": "incident",
+   "label_kind": "crash",
+   "label_window": [
+    1768409060500,
+    1768409061500
+   ],
+   "label_evidence_event_ids": [
+    "5f60a628-13cd-4922-adfb-47668073f51e"
+   ]
+  },
+  {
+   "case_key": "dev-16",
+   "incident_id": "0c870d52-49b6-592b-8ee7-230c013afdc7",
+   "trip_id": "a061288c-a7d2-4d76-8d6b-372abdf8289a",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768392665500,
+    1768392666500
+   ],
+   "label_evidence_event_ids": [
+    "d23e649e-2672-4c1f-9fb6-eac58d5117f0",
+    "a8fa8483-f768-41c3-b3fd-95f490afe885"
+   ]
+  },
+  {
+   "case_key": "dev-17",
+   "incident_id": "1d315c7b-e025-598e-a04c-bf4e2b975a7f",
+   "trip_id": "d4a9faea-cfd9-4b10-8236-32b20557edca",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768463480500,
+    1768463482500
+   ],
+   "label_evidence_event_ids": [
+    "3b7dd8ac-b2de-4463-8ca3-1085dc22839f",
+    "57e3a468-2e54-4df0-85d0-e4ad8d6712ff",
+    "955fd83b-62ee-4a25-a76e-780ce4a9fe2f"
+   ]
+  },
+  {
+   "case_key": "dev-18",
+   "incident_id": "2c43c006-dcef-5e1a-bc0e-e36dd93b5c1f",
+   "trip_id": "0d864c5b-9758-4a7e-bdc7-95e03fa3bba8",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768688511500,
+    1768688512500
+   ],
+   "label_evidence_event_ids": [
+    "0312b740-5bf8-4df6-b5b6-4e3c1f56687e",
+    "557bc6da-f05f-4036-800f-f2b9cf598601"
+   ]
+  },
+  {
+   "case_key": "dev-19",
+   "incident_id": "3f8164af-35b4-5c78-936e-7eb5c99fa6a5",
+   "trip_id": "9967534d-d27f-4c57-b584-3f465636bb1c",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1767956890500,
+    1767956891500
+   ],
+   "label_evidence_event_ids": [
+    "9476d702-e2e5-45d9-8a29-183a5a3555d2",
+    "d5b2d0c7-cc42-4e68-80aa-1ec95ecb82c4"
+   ]
+  },
+  {
+   "case_key": "dev-20",
+   "incident_id": "420f284b-0e75-579b-8e6d-03417cbdeb0a",
+   "trip_id": "75698d74-4f12-4fa8-bc1e-06bcdea4bb60",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768416279500,
+    1768416280500
+   ],
+   "label_evidence_event_ids": [
+    "50063399-88c2-457f-a42c-92001f802d8b",
+    "e774f234-f378-4668-a34e-ac2524881178"
+   ]
+  },
+  {
+   "case_key": "dev-21",
+   "incident_id": "5b10a7ae-0669-59de-986f-00cbf86c40b0",
+   "trip_id": "2d0cfd09-db58-4ed2-8a33-793a6701132d",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768391503500,
+    1768391504500
+   ],
+   "label_evidence_event_ids": [
+    "8b1ee573-1a2a-402a-8bde-97552ec11f4c",
+    "02a1bc44-fd20-4f09-81c5-0c060a8d0dc5"
+   ]
+  },
+  {
+   "case_key": "dev-22",
+   "incident_id": "ba5795d7-4383-5be8-b860-8141fdd59f73",
+   "trip_id": "6adba509-55d6-44b1-ad4c-636fde5eb25a",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768547745500,
+    1768547747500
+   ],
+   "label_evidence_event_ids": [
+    "89f73200-d860-443d-b6c3-2200a18b9e83",
+    "f8b9d98b-3e42-40ad-8939-7b8fad46b361",
+    "cfdea039-c97d-4883-acfb-263e5d7b1036"
+   ]
+  },
+  {
+   "case_key": "dev-23",
+   "incident_id": "d63e0fb7-2212-58d9-9526-7483e5bf6e48",
+   "trip_id": "1fcdef09-8e6c-487f-b9f7-8631e15bec35",
+   "detected_kind": "near_miss",
+   "expected": "near_miss",
+   "truth_source": "incident",
+   "label_kind": "near_miss",
+   "label_window": [
+    1768196525500,
+    1768196527500
+   ],
+   "label_evidence_event_ids": [
+    "e7980b8e-8e63-4c43-ab2f-05da429d8cc6",
+    "9ce9ed79-e960-4a76-b439-ea3631d8ef87",
+    "ad865294-d26c-49d1-8424-5087c2cab016"
+   ]
+  },
+  {
+   "case_key": "dev-24",
+   "incident_id": "46497733-bfeb-56cf-ac30-676457641e91",
+   "trip_id": "fedc1765-d399-47da-907e-aaa577157fae",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1767720890500,
+    1767720911500
+   ],
+   "label_evidence_event_ids": [
+    "6fdb1722-7823-4c1e-a76d-e443cb7705ab",
+    "cc67b7d9-3286-48d6-b651-720684bbfa7c",
+    "635e0ebc-d896-4349-99aa-6eec217b37a6",
+    "e79ccdbd-d04b-4a83-8eb2-320bb51fd979",
+    "6dc501fb-cd1c-47a7-8012-a1cf936d9185"
+   ]
+  },
+  {
+   "case_key": "dev-25",
+   "incident_id": "5bd96532-feef-53c8-9b65-e2e3d1cd825a",
+   "trip_id": "ea77a289-854f-47cb-aaf6-16b14cb61691",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1767966235500,
+    1767966254500
+   ],
+   "label_evidence_event_ids": [
+    "c6df827a-ad49-4de7-a1ea-20a8710fab2c",
+    "f1d88c88-1e12-415d-9ed2-d97ee1ef031d",
+    "2e137080-984c-4cc2-896c-afec9bc92e21",
+    "e3d9b54a-c2c0-4510-899f-4ad5bfd65586",
+    "ef4b597c-0b2b-4cd9-b5d6-d38a8747c957"
+   ]
+  },
+  {
+   "case_key": "dev-26",
+   "incident_id": "7b09f000-a7ae-50f6-8b68-de84b4b111be",
+   "trip_id": "81990587-b6ab-4794-828d-2f1735ab11ba",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1767735434500,
+    1767735452500
+   ],
+   "label_evidence_event_ids": [
+    "d3356e00-c6ae-49b3-9ae8-1c20a90bd17a",
+    "7e168a80-a8d3-44f0-9bdf-4e80d675ac42",
+    "6c10f57d-72b6-4bb1-a23c-5c346e603c66",
+    "e04a49a2-beb0-417e-812d-348b1b8d4227",
+    "5f850214-7807-4c62-80ea-4165f5e784c6"
+   ]
+  },
+  {
+   "case_key": "dev-27",
+   "incident_id": "8d2e273f-bc90-5dc0-86d6-7af8a7a058d9",
+   "trip_id": "2d0cfd09-db58-4ed2-8a33-793a6701132d",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1768391543500,
+    1768391569500
+   ],
+   "label_evidence_event_ids": [
+    "a3fda73b-8f89-4637-b80c-434daa7bc573",
+    "d53f3ede-3fa2-4ac1-a73a-ba91c7f34d47",
+    "89a2a9b2-4f73-4497-b587-266c73a6c4c1",
+    "70e4b159-652b-4514-8005-d1eb8b13f4b6",
+    "dc3de140-617f-41cf-a151-aff1baf82ab5"
+   ]
+  },
+  {
+   "case_key": "dev-28",
+   "incident_id": "96b5f8a5-c5a2-5e08-b8b3-19a0d4284c0f",
+   "trip_id": "62d588d2-7f38-4fa7-a48c-487bd7684cf0",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1768054743500,
+    1768054778500
+   ],
+   "label_evidence_event_ids": [
+    "70d9ccdd-d0bb-4b10-852f-ff9d4cbe44b5",
+    "3a0e1a64-b058-453a-b28c-674d01288e80",
+    "f2dc7197-aa7d-472f-911d-7427841f2874",
+    "27c245eb-fcc2-4c8a-88ec-e039e7824af7",
+    "8c69e3df-b22f-4763-b393-bdc92bf7cb8c"
+   ]
+  },
+  {
+   "case_key": "dev-29",
+   "incident_id": "a7171ce1-8961-5d4f-a75d-9fb16e21005f",
+   "trip_id": "b472ac58-5e74-4a25-b916-7aefd3e68dcb",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1768377458500,
+    1768377491500
+   ],
+   "label_evidence_event_ids": [
+    "04f82e85-be8f-4d68-a765-fdc4dddccc5e",
+    "a404f242-dfc7-4f2f-b5fb-d5c96ab1845c",
+    "85e158dc-fd38-4f07-8b49-aa5147e39022",
+    "f11a7ac0-c586-40d4-8f44-89bfcb6d9617",
+    "8fecdb6e-e93c-448d-8b7b-d0601d7a0a9a"
+   ]
+  },
+  {
+   "case_key": "dev-30",
+   "incident_id": "a792cd3b-4bf1-534a-a025-ee50aad116e8",
+   "trip_id": "25dd3d37-ec1b-40f0-8b81-a382332fa5f7",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1768171441500,
+    1768171465500
+   ],
+   "label_evidence_event_ids": [
+    "e5ac54a4-f02a-43c7-a69e-560b18e773dd",
+    "fcaa86f4-4677-4259-a317-6cff913317f0",
+    "93326a11-3caa-4206-a0f7-00aa15900200",
+    "18f52468-b29d-4268-b5d2-f852e31dfbf9",
+    "8ccc3400-5afd-413b-8a99-b0c6dac8a6de"
+   ]
+  },
+  {
+   "case_key": "dev-31",
+   "incident_id": "af8dbbac-c949-59f1-a0ba-e24293bd7e07",
+   "trip_id": "4a14f065-e6a1-4bc7-8d27-e023be92e6f8",
+   "detected_kind": "phone_distraction",
+   "expected": "phone_distraction",
+   "truth_source": "incident",
+   "label_kind": "phone_distraction",
+   "label_window": [
+    1768414533500,
+    1768414566500
+   ],
+   "label_evidence_event_ids": [
+    "809431b3-1aa3-4827-b09f-d6057a84121c",
+    "a1d47b87-3a2e-480a-811f-c9ae72c80c82",
+    "2c2a71fa-7a93-4912-91b0-68917d5111ff",
+    "b74b9fe1-edb7-4a18-b1e2-07cc41875c6a",
+    "f7a658ed-513a-4f93-af02-d7c3745d88e1"
+   ]
+  },
+  {
+   "case_key": "dev-32",
+   "incident_id": "28a7ed4b-63b2-5c43-8a1b-e27403988b9f",
+   "trip_id": "653c53f7-370f-4f15-9e76-35cf9c5341b1",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1767797335500,
+    1767797336500
+   ],
+   "label_evidence_event_ids": [
+    "ffe5d596-5c11-4228-8f05-3a34c0be9802"
+   ]
+  },
+  {
+   "case_key": "dev-33",
+   "incident_id": "4b21ffb4-5785-5dff-bbbf-49bae7394dcf",
+   "trip_id": "48043271-405f-4f3d-82fd-81d684598238",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1768739011500,
+    1768739012500
+   ],
+   "label_evidence_event_ids": [
+    "2ae52744-0f28-4781-86b0-6be7e51a6046"
+   ]
+  },
+  {
+   "case_key": "dev-34",
+   "incident_id": "7c94c104-2b4d-5016-943c-4d13b09bead2",
+   "trip_id": "753c3c8a-1ddc-42b6-a1b4-f37453dc4cf0",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1768508125500,
+    1768508126500
+   ],
+   "label_evidence_event_ids": [
+    "e610a340-142f-434b-91e1-d74d407e02e5"
+   ]
+  },
+  {
+   "case_key": "dev-35",
+   "incident_id": "81c56562-d483-5fb0-8152-98143e014754",
+   "trip_id": "62d588d2-7f38-4fa7-a48c-487bd7684cf0",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1768054823500,
+    1768054824500
+   ],
+   "label_evidence_event_ids": [
+    "61d5e9ab-586e-4b9d-84dd-c54fddb70dcd"
+   ]
+  },
+  {
+   "case_key": "dev-36",
+   "incident_id": "8b9866a3-b4f9-5fe1-a23a-be660fb711dd",
+   "trip_id": "b605aa6b-9c40-4e9d-92ab-86a156fa4a29",
+   "detected_kind": "crash",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "pothole",
+   "label_window": [
+    1768328177500,
+    1768328178500
+   ],
+   "label_evidence_event_ids": [
+    "a32d8e48-5d3b-47d3-a2ef-3e7328f3e78e"
+   ]
+  },
+  {
+   "case_key": "dev-37",
+   "incident_id": "b7efe799-23cd-51a9-a4f8-cab4d7e5f129",
+   "trip_id": "346dafbd-7bd7-4083-a15b-18b08c4bd9a5",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1767636431500,
+    1767636432500
+   ],
+   "label_evidence_event_ids": [
+    "371d1bf8-5f57-4d98-9a64-45718a88cbb6"
+   ]
+  },
+  {
+   "case_key": "dev-38",
+   "incident_id": "c3ecc425-e4d1-51de-a2bd-fb351114d6e7",
+   "trip_id": "1a16a4d8-6b1f-4312-adb9-6889053d833e",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1767781244500,
+    1767781245500
+   ],
+   "label_evidence_event_ids": [
+    "0aff2fae-d6f0-47af-b8d5-81e3734f3be9"
+   ]
+  },
+  {
+   "case_key": "dev-39",
+   "incident_id": "c63d4489-044f-5726-bbd8-10ec69ffbed7",
+   "trip_id": "333cf032-adeb-4cc5-a9e3-774b73cf7c2c",
+   "detected_kind": "hard_braking",
+   "expected": "no_incident",
+   "truth_source": "hard_negative",
+   "label_kind": "firm_brake",
+   "label_window": [
+    1768572873500,
+    1768572874500
+   ],
+   "label_evidence_event_ids": [
+    "157e11c2-0a2d-4084-9661-755fc1ca16f0"
+   ]
+  }
+ ],
+ "stats": {
+  "detected_incidents": 111,
+  "available_by_expected": {
+   "hard_braking": 30,
+   "crash": 10,
+   "near_miss": 22,
+   "phone_distraction": 26,
+   "no_incident": 23
+  },
+  "selected_by_expected": {
+   "hard_braking": 8,
+   "crash": 8,
+   "near_miss": 8,
+   "phone_distraction": 8,
+   "no_incident": 8
+  },
+  "selected_by_truth_source": {
+   "incident": 32,
+   "hard_negative": 8,
+   "unlabeled": 0
+  },
+  "detector_kind_mismatch_selected": 8,
+  "injected_incidents": 87,
+  "detector_missed_incidents": {
+   "hard_braking": 0,
+   "crash": 0,
+   "near_miss": 0,
+   "phone_distraction": 0
+  }
+ },
+ "db_fingerprint": "17e64fb66a738d98",
+ "dataset_hash": "f06c66a97f189b66"
+}
