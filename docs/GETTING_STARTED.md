@@ -36,7 +36,7 @@ Activate the environment:
 
 ```bash
 pip install -e ".[dev]"
-pytest -m "not slow"          # should end with "227 passed"
+pytest -m "not slow"          # should end with "239 passed"
 ```
 
 ## 2. Generate data and ingest it

@@ -1,5 +1,5 @@
 import type { JsonObject, TraceResponse } from "../types";
-import { actorLabel, citedEvent, fmtTime, isObj } from "../steps";
+import { actorLabel, citedEvent, fmtSpeed, fmtTime, isObj } from "../steps";
 import { JsonView } from "./common";
 
 export function Evidence({ eventId, trace, onClose, onJump }: {
@@ -24,6 +24,12 @@ export function Evidence({ eventId, trace, onClose, onJump }: {
           <dl className="facts">
             <div><dt>Type</dt><dd>{String(ev.type)}</dd></div>
             <div><dt>Event time</dt><dd>{typeof ev.event_time_ms === "number" ? fmtTime(ev.event_time_ms) : "-"}</dd></div>
+            {payload && typeof payload.speed_mps === "number" && (
+              <div><dt>Speed</dt><dd>{fmtSpeed(payload.speed_mps)}</dd></div>
+            )}
+            {payload && typeof payload.speed_limit_mps === "number" && (
+              <div><dt>Speed limit</dt><dd>{fmtSpeed(payload.speed_limit_mps)}</dd></div>
+            )}
           </dl>
           {ev.type === "driver_note" && payload && (
             <div className="untrusted-box">

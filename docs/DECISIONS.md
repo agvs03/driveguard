@@ -810,3 +810,37 @@ A third one came from self-review: when a token expired, every request failed
 but the UI stayed "signed in" with the stale token in storage. A 401 now
 clears the token and returns to sign-in, while a 403 keeps the session. Both
 cases are tested.
+
+**D-50 · Speeds are stored in m/s and reported in mph, and both units are verified.**
+- *Why:* the reviewers are US-based and read speed in mph. Sensors and the
+  policy are in SI units, so storage stays in m/s and conversion happens only
+  at the edges.
+- *Reports:* the writer states "28.6 mph (12.8 m/s)", so the reader gets mph
+  and the m/s value still matches the raw event exactly.
+- *Validator:* `mph` is now a verified unit, with a tolerance of 0.7 mph
+  (about 0.3 m/s, the same as for m/s). This is the important part: just
+  telling the model to write mph would have let every mph number through
+  unchecked, because the validator only verified units it recognised.
+- *Policy thresholds:* thresholds quoted in another unit ("the 11.2 mph
+  phone-distraction threshold", which is 5 m/s) are recognised after
+  conversion.
+- *UI:* GPS evidence shows speed and limit in mph with the stored m/s value.
+- *Verified on real Claude* (3 mini cases, $0.60):
+  - every speed came out in the requested form;
+  - all conversions were correct;
+  - all 3 reports passed the citation check on the first draft (22–33 numbers
+    checked each);
+  - **0** "token estimate below actual" guard spans, where every call had one
+    before M-25. That fix is now confirmed on real traffic.
+
+**M-29 · A patch that silently did nothing, caught by its own tests.**
+The first mph patch changed the docs and the matching code, but not the unit
+regex. The shell's backslash unescaping changed the search string, so
+`str.replace` found no match and did nothing. mph claims then went through
+completely unchecked ("Speed was 35 mph" passed), and only the new negative
+tests caught it.
+- *Fix:* the regex edit was redone with the edit tool.
+- *Rule:* scripted patches now `assert old in text` before replacing.
+- *Lesson:* a feature is only as good as its negative tests; the "wrong
+  value is caught" cases exposed the no-op.
+

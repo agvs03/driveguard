@@ -16,7 +16,7 @@ review:
 come from a seeded simulator. There is no real company, customer or
 credential data.
 
-![Case view: report with citation chips, run stats, verified audit chain and the agents' reasoning timeline](docs/img/case-view.jpg)
+![Case view: report with citation chips, run stats, verified audit chain and the agents' reasoning timeline](docs/img/case-view-light.png)
 
 ## Architecture
 
@@ -80,7 +80,7 @@ agent.
 ```bash
 python -m venv .venv && .venv/Scripts/activate      # Windows; on macOS/Linux: source .venv/bin/activate
 pip install -e ".[dev]"
-pytest -m "not slow"                                 # 227 fast tests; `pytest` runs all 270 (~2 min)
+pytest -m "not slow"                                 # 239 fast tests; `pytest` runs all 282 (~3 min)
 ```
 
 The whole pipeline, end to end:
@@ -144,6 +144,14 @@ The scripted baseline scores 1.000 on 240 dev and test case-samples. That is a
 *ceiling* check of the harness, not a skill measure, because the scripted
 agent and the labels follow the same policy.
 
+### More screenshots
+
+| A clicked citation: the exact sensor event (speed in mph, stored in m/s) and the tool call that returned it | A prompt-injection attempt blocked by the output guard and escalated to a human |
+|---|---|
+| ![Citation](docs/img/citation-light.png) | ![Escalated](docs/img/escalated-light.png) |
+
+Dark-mode versions are in [`docs/img/`](docs/img).
+
 ### Security
 
 Details in [SECURITY.md](docs/SECURITY.md).
@@ -178,12 +186,12 @@ dependency even though no event is lost.
 
 ### Total model spend for the project
 
-About **$6.68**. Everything else runs on the free scripted model.
+About **$7.30**. Everything else runs on the free scripted model.
 
 ## What I'd flag in review
 
-The full list is in [DECISIONS.md](docs/DECISIONS.md), with 49 decisions and
-28 mistakes, each with a root cause. Some highlights:
+The full list is in [DECISIONS.md](docs/DECISIONS.md), with 50 decisions and
+29 mistakes, each with a root cause. Some highlights:
 - **M-25.** The budget's "a call can never overshoot the cap" guarantee was
   false on real traffic.
   - The input-token estimate was 1.4–1.8× too low on UUID-heavy JSON.
@@ -227,7 +235,7 @@ driveguard/
   obs/          logs, metrics, tracing, SLOs, benchmark
   api/          read-only reviewer API
 web/            React + TypeScript reviewer UI (Vite, Vitest)
-tests/          pytest suites (270)
+tests/          pytest suites (282)
 docs/           design, decisions, evals, security, operations
 ```
 

@@ -24,6 +24,7 @@ from typing import Any
 
 from driveguard.agents.budget import Usage
 from driveguard.agents.llm import LLMResponse, ToolCall
+from driveguard.agents.citations import MPH_PER_MPS
 from driveguard.agents.policy import classify_by_policy, resultant as _resultant
 
 FAULTS = {"hallucinate_citation", "wrong_number", "foreign_trip", "disallowed_tool", "loop", "bad_json",
@@ -219,7 +220,10 @@ class ScriptedClient:
             unit = m["unit"]
             val = m["value"]
             label = m["name"].replace("_", " ")
-            value_txt = f"{abs(val):.2f} {unit}" if unit in ("g", "m/s") else f"{val} {unit}"
+            if unit == "m/s":  # same convention the real writer is told to follow: mph first, m/s in brackets
+                value_txt = f"{abs(val) * MPH_PER_MPS:.1f} mph ({abs(val):.2f} m/s)"
+            else:
+                value_txt = f"{abs(val):.2f} {unit}" if unit == "g" else f"{val} {unit}"
             findings.append({"claim": f"The {label} was {value_txt}.", "cited_event_ids": [m["event_id"]],
                              "confidence": triage["confidence"]})
         # Cite the event that directly shows the behaviour (eval change: phone reports used to cite only

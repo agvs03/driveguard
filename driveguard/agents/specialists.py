@@ -161,7 +161,10 @@ WRITER = AgentSpec(
         "event the number comes from, and the number must match that event's payload. Always include a finding "
         "that cites the event which directly shows the behaviour itself: the phone unlock/screen_on event for "
         "phone distraction, the accelerometer window for braking, swerving or impact. Put evidence that cuts "
-        "against your conclusion in contradicting_evidence. State limitations honestly."),
+        "against your conclusion in contradicting_evidence. State limitations honestly. "
+        "Units for the human reader: state every speed in mph first, with the event's m/s value in brackets, "
+        "e.g. \"28.6 mph (12.8 m/s)\". Convert with 1 m/s = 2.237 mph and round mph to one decimal. Do not use "
+        "any other speed unit. Keep accelerations in g."),
     tools=(), output=ReportDraft, effort="medium", max_tokens=6000,
 )
 

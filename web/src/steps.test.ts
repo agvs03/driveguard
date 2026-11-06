@@ -1,4 +1,10 @@
-import { buildPhases, citedEvent, eventsIn, spanToStep } from "./steps";
+import { buildPhases, citedEvent, eventsIn, fmtSpeed, spanToStep } from "./steps";
+
+test("speeds display in mph with the stored m/s value", () => {
+  expect(fmtSpeed(12.8)).toBe("28.6 mph (12.8 m/s)");
+  expect(fmtSpeed(13.9)).toBe("31.1 mph (13.9 m/s)");
+  expect(fmtSpeed(0)).toBe("0.0 mph (0 m/s)");
+});
 import type { TraceSpan } from "./types";
 
 let seq = 0;

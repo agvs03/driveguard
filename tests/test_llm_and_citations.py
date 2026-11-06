@@ -205,6 +205,30 @@ def test_validator_does_not_flag_reasoning_about_policy_thresholds(claim, ids, e
     assert _codes(_report((claim, ids)))[0] == expected
 
 
+@pytest.mark.parametrize("claim,ids,expected", [
+    # Reports state speeds in mph for the reader; mph numbers are verified like m/s ones.
+    ("Speed was 30.0 mph (13.4 m/s).", ["g1"], set()),                  # 13.4 m/s = 29.98 mph
+    ("Speed was 29.5 mph.", ["g1"], set()),                             # within ~0.3 m/s
+    ("The limit was 31.1 mph.", ["g1"], set()),                         # speed_limit 13.9 m/s
+    ("Speed was 35 mph.", ["g1"], {"E_NUMBER"}),                        # a made-up mph figure is caught
+    ("Speed was 30.0 mph.", ["a1"], {"E_NO_SOURCE"}),                   # cites no GPS event
+    ("Speed was 30.0 mph (20 m/s).", ["g1"], {"E_NUMBER"}),             # right mph, wrong m/s: still caught
+    ("Speed was 30 MPH.", ["g1"], set()),                               # case-insensitive
+    # Policy thresholds quoted in mph or km/h are recognised after conversion (5 m/s, 0 m/s):
+    ("Speed stayed above the 11.2 mph phone-distraction threshold.", ["g1"], set()),
+    ("The crash criterion requires the vehicle to stay at 0 mph.", ["g1"], set()),
+    ("Above the 18 km/h policy threshold.", ["g1"], set()),
+    ("Speed was 11.2 mph.", ["g1"], {"E_NUMBER"}),                      # same number, not a threshold
+])
+def test_mph_numbers_are_verified(claim, ids, expected):
+    assert _codes(_report((claim, ids)))[0] == expected
+
+
+def test_mph_in_the_summary_is_verified():
+    assert _codes(_report(("Braked.", ["a1", "g1"]), summary="Peak 0.62 g at 30.0 mph."))[0] == set()
+    assert _codes(_report(("Braked.", ["a1", "g1"]), summary="Peak 0.62 g at 45 mph."))[0] == {"E_SUMMARY_NUMBER"}
+
+
 def test_policy_constants_come_from_the_policy_text():
     from driveguard.agents.citations import _policy_constants
     c = _policy_constants()

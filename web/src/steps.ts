@@ -255,6 +255,14 @@ export function citedEvent(spans: TraceSpan[], seq: number | null | undefined, e
   return eventsIn(span.output).find((e) => e.event_id === eventId) ?? null;
 }
 
+// Same constant as the citation validator (driveguard/agents/citations.py): 1 m/s = 3600 / 1609.344 mph.
+export const MPH_PER_MPS = 2.2369362920544;
+
+/** "28.6 mph (12.8 m/s)": speeds are stored in m/s (as the sensors report them) and shown in mph. */
+export function fmtSpeed(mps: number): string {
+  return `${(mps * MPH_PER_MPS).toFixed(1)} mph (${mps} m/s)`;
+}
+
 export function shortId(id: string | null | undefined): string {
   return id ? id.slice(0, 8) : "-";
 }

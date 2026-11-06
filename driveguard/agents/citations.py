@@ -4,7 +4,7 @@ For every finding (and contradicting-evidence item) in a report:
   E_UNKNOWN      cited id is not an event of this case's trip (or does not exist)
   E_UNGROUNDED   cited event's full record never appeared in a tool result in
                  this run's trace (the model could not have read it)
-  E_NUMBER       a number with a unit (g, m/s, km/h) in the claim does not
+  E_NUMBER       a number with a unit (g, m/s, km/h, mph) in the claim does not
                  match any value in the cited events (within tolerance)
   E_NO_SOURCE    the claim states such a number but cites no event of a type
                  that could contain it (e.g. "0.6 g" citing only GPS events)
@@ -20,7 +20,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-_NUM = re.compile(r"(-?\d+(?:\.\d+)?)\s*(g\b|m/s\b|km/h\b|s\b|seconds\b)", re.IGNORECASE)
+_NUM = re.compile(r"(-?\d+(?:\.\d+)?)\s*(g\b|m/s\b|km/h\b|mph\b|s\b|seconds\b)", re.IGNORECASE)
 # Classification-policy thresholds may be quoted in prose ("above the 0.45 g policy
 # threshold"). They are exempt ONLY when threshold wording is adjacent, so "the
 # deceleration was 0.45 g" is still checked against the cited events.
@@ -41,8 +41,18 @@ _THRESHOLD_WORDS = re.compile(
     re.IGNORECASE)
 
 
+def _is_policy_value(value: float, unit: str) -> bool:
+    """Is (value, unit) one of the policy's constants? Speeds are compared in m/s, so the 5 m/s
+    threshold quoted as "11.2 mph" or "18 km/h" is recognised (rounding allowed, 2% or 0.06 m/s)."""
+    consts = _policy_constants()
+    if unit == "g":
+        return ("g", value) in consts
+    mps = value / SPEED_UNITS[unit][0]
+    return any(u == "m/s" and abs(c - mps) <= max(0.06, 0.02 * c) for u, c in consts)
+
+
 def _is_quoted_threshold(text: str, m: re.Match[str], value: float, unit: str) -> bool:
-    if (unit, value) not in _policy_constants():
+    if not _is_policy_value(value, unit):
         return False
     # Sentence-level context: "the crash criterion, which requires the vehicle to stay at 0 m/s" put the
     # threshold word 40+ chars away (real Claude red-team run, M-24). A fixed character window kept missing.
@@ -53,6 +63,13 @@ def _is_quoted_threshold(text: str, m: re.Match[str], value: float, unit: str) -
 G_TOL_ABS, G_TOL_REL = 0.02, 0.05
 MPS_TOL = 0.3
 KMH_TOL = 1.0
+MPH_PER_MPS = 2.2369362920544  # exact: 1 m/s = 3600 / 1609.344 mph
+MPH_TOL = 0.7                  # ~0.3 m/s, the same tolerance as MPS_TOL
+# Speeds are stored in m/s (SI, as the sensors report them) and may be stated in any of these units.
+# Every unit here is VERIFIED against the cited events; a unit missing from this table would let
+# its numbers through unchecked, which is why reports may not use other units.
+SPEED_UNITS: dict[str, tuple[float, float]] = {"m/s": (1.0, MPS_TOL), "km/h": (3.6, KMH_TOL),
+                                               "mph": (MPH_PER_MPS, MPH_TOL)}
 
 
 @dataclass
@@ -91,6 +108,16 @@ def _speeds(payload: dict[str, Any]) -> list[float]:
     return [float(payload[k]) for k in ("speed_mps", "speed_limit_mps") if k in payload]
 
 
+def _match(value: float, unit: str, events: list[dict[str, Any]]) -> tuple[list[float], bool]:
+    """(candidate values from the events, in the claim's unit; does the claim's value match one?)"""
+    if unit == "g":
+        pool = [v for e in events if e.get("type") == "accel" for v in _g_values(e["payload"])]
+        return pool, any(abs(v - value) <= max(G_TOL_ABS, G_TOL_REL * v) for v in pool)
+    mult, tol = SPEED_UNITS[unit]
+    pool = [v * mult for e in events if e.get("type") == "gps" for v in _speeds(e["payload"])]
+    return pool, any(abs(v - value) <= tol for v in pool)
+
+
 def validate_report(report: dict[str, Any], *, trip_event_ids: set[str], seen: dict[str, tuple[dict[str, Any], str]],
                     incident: dict[str, Any], triage_classification: str | None) -> ValidationResult:
     res = ValidationResult(ok=True)
@@ -124,15 +151,7 @@ def validate_report(report: dict[str, Any], *, trip_event_ids: set[str], seen: d
             if _is_quoted_threshold(f.get("claim", ""), m, value, unit):
                 continue
             res.numbers_checked += 1
-            if unit == "g":
-                pool = [v for e in events if e.get("type") == "accel" for v in _g_values(e["payload"])]
-                ok = any(abs(v - value) <= max(G_TOL_ABS, G_TOL_REL * v) for v in pool)
-            elif unit == "m/s":
-                pool = [v for e in events if e.get("type") == "gps" for v in _speeds(e["payload"])]
-                ok = any(abs(v - value) <= MPS_TOL for v in pool)
-            else:  # km/h
-                pool = [v * 3.6 for e in events if e.get("type") == "gps" for v in _speeds(e["payload"])]
-                ok = any(abs(v - value) <= KMH_TOL for v in pool)
+            pool, ok = _match(value, unit, events)
             if not pool:
                 res.errors.append(Issue("E_NO_SOURCE", where, f"{m.group(0)!r} cites no event that could contain it"))
             elif not ok:
@@ -147,14 +166,7 @@ def validate_report(report: dict[str, Any], *, trip_event_ids: set[str], seen: d
         if unit in ("s", "seconds") or _is_quoted_threshold(report.get("summary", ""), m, value, unit):
             continue
         res.numbers_checked += 1
-        if unit == "g":
-            pool = [v for e in all_cited if e.get("type") == "accel" for v in _g_values(e["payload"])]
-            ok = any(abs(v - value) <= max(G_TOL_ABS, G_TOL_REL * v) for v in pool)
-        else:
-            mult = 3.6 if unit == "km/h" else 1.0
-            tol = KMH_TOL if unit == "km/h" else MPS_TOL
-            pool = [v * mult for e in all_cited if e.get("type") == "gps" for v in _speeds(e["payload"])]
-            ok = any(abs(v - value) <= tol for v in pool)
+        _, ok = _match(value, unit, all_cited)
         if not ok:
             res.errors.append(Issue("E_SUMMARY_NUMBER", "summary",
                                     f"{m.group(0)!r} does not match any event cited in the findings"))
