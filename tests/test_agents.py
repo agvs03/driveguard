@@ -269,3 +269,24 @@ def test_redaction_of_tokens_and_keys():
     blob = json.dumps(out)
     assert jwt_tok not in blob and key not in blob and "[REDACTED_TOKEN]" in blob and "[REDACTED_KEY]" in blob
     assert out["n"] == 3
+
+
+async def test_investigate_all_picks_up_rejected_cases_with_feedback(db):
+    """Phase 6: a rejected case used to be stranded, because --all only selected incidents without a case."""
+    from driveguard.agents.runtime import pending_incidents
+    from driveguard.guardrails import ON
+    async with local_orchestrator(str(db), ScriptedClient(), guardrails=ON) as o:
+        approved = await o.investigate(_incident(db, "crash"))
+        rejected = await o.investigate(_incident(db, "hard_braking"))
+        await o.review(approved.case_id, "approve", "fine", "pat")
+        await o.review(rejected.case_id, "reject", "Cite the GPS speed before the brake.", "pat")
+        pending = await o.db.run(pending_incidents, 100)
+        assert rejected.incident_id in pending and pending[0] == rejected.incident_id, "rejected cases come first"
+        assert approved.incident_id not in pending, "closed cases are never re-run"
+        rerun = await o.investigate(rejected.incident_id)
+        assert rerun.status == "awaiting_approval"
+        spans = await o.db.run(load_spans, rerun.run_id)
+    first_task = next(s for s in spans if s["kind"] == "state" and s["actor"] == "triage")["input"]["input"]
+    assert "Cite the GPS speed before the brake." in first_task, "the reviewer's comment reaches the agents"
+    with _conn(db) as c:
+        assert rejected.incident_id not in pending_incidents(c, 100), "resubmitted: no longer pending"

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, ApiError } from "../api";
+import { api, ApiError, CASE_UPDATED } from "../api";
+import { ReviewPanel } from "./ReviewPanel";
 import { buildPhases, fmtTime, shortId } from "../steps";
 import type { CaseDetail, Me, TraceResponse } from "../types";
 import { Empty, ErrorBox, JsonView, StatusPill } from "./common";
@@ -18,26 +19,34 @@ export function CaseView({ caseId, runId, me, onSelectRun }: {
   const [highlight, setHighlight] = useState<number | null>(null);
   const canTrace = me.scopes.includes("trace:read");
 
+  const [reload, setReload] = useState(0);
+  const canReview = me.scopes.includes("cases:review");
+
   useEffect(() => {
     let live = true;
-    setCase(null);
+    if (reload === 0) setCase(null);
     setError(null);
     setCitation(null);
     api.case(caseId).then((x) => live && setCase(x)).catch((e) => live && setError(e));
     return () => { live = false; };
-  }, [caseId]);
+  }, [caseId, reload]);
+
+  const onReviewed = () => {
+    setReload((n) => n + 1);
+    window.dispatchEvent(new Event(CASE_UPDATED)); // the case list refreshes its statuses
+  };
 
   const activeRun = runId ?? c?.report?.run_id ?? c?.runs[0]?.run_id ?? null;
 
   useEffect(() => {
     let live = true;
-    setTrace(null);
+    if (reload === 0) setTrace(null); // after a review, keep showing the old trace until the new one arrives
     setTraceError(null);
     setHighlight(null);
     if (!activeRun || !canTrace) return;
     api.trace(activeRun).then((t) => live && setTrace(t)).catch((e) => live && setTraceError(e));
     return () => { live = false; };
-  }, [activeRun, canTrace]);
+  }, [activeRun, canTrace, reload]); // reload: a review appends a human_decision span to this trace
 
   const phases = useMemo(() => (trace ? buildPhases(trace.spans) : []), [trace]);
 
@@ -94,6 +103,7 @@ export function CaseView({ caseId, runId, me, onSelectRun }: {
             <div className="note-box">This report was written by run <code>{shortId(c.report!.run_id)}</code>; the
               timeline shows run <code>{shortId(activeRun)}</code>.</div>
           )}
+          {canReview && <ReviewPanel c={c} onReviewed={onReviewed} />}
           <Report c={c} trace={reportMatchesRun ? trace : null} onOpenCitation={openCitation} />
           <section className="card">
             <h2>Case history</h2>

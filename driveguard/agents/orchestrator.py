@@ -177,14 +177,16 @@ class Orchestrator:
                     if h["action"] == "reject" and h["actor_role"] == "human"]
         if feedback:
             task["reviewer_feedback"] = feedback
+        inc = case.get("incident") or {}
+        focus = (inc["t_start_ms"], inc["t_end_ms"]) if "t_start_ms" in inc and "t_end_ms" in inc else None
 
         async with ToolGateway.open(self.connector, read_tok("triage"), "triage", list(TRIAGE.tools), trace,
-                                    budget, self.guardrails) as gw:
+                                    budget, self.guardrails, focus=focus) as gw:
             triage: TriageResult = await run_agent(TRIAGE, task, llm=self.llm, gateway=gw, budget=budget,
                                                    trace=trace, parent=root)  # type: ignore[assignment]
         out.triage = triage.model_dump()
         async with ToolGateway.open(self.connector, read_tok("evidence"), "evidence", list(EVIDENCE.tools), trace,
-                                    budget, self.guardrails) as gw:
+                                    budget, self.guardrails, focus=focus) as gw:
             evidence: EvidenceResult = await run_agent(EVIDENCE, {**task, "triage": triage.model_dump()},
                                                        llm=self.llm, gateway=gw, budget=budget, trace=trace,
                                                        parent=root)  # type: ignore[assignment]

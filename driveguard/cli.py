@@ -151,9 +151,9 @@ async def _agents(a: argparse.Namespace) -> None:
     async with local_orchestrator(a.db, _llm(a), limits=limits) as orch:
         # Selected only after the orchestrator has connected, which runs schema migrations:
         # an older database has no `cases` table until then (found in the Phase 3 walkthrough).
-        ids = [a.incident] if a.incident else await orch.db.run(lambda c: [r[0] for r in c.execute(
-            "SELECT i.incident_id FROM detected_incidents i LEFT JOIN cases k USING (incident_id) "
-            "WHERE i.superseded_at_ms IS NULL AND k.case_id IS NULL ORDER BY i.t_start_ms LIMIT ?", (a.limit,))])
+        from driveguard.agents.runtime import pending_incidents
+        # --all: new incidents AND cases a reviewer rejected (they rerun with the reviewer's comment).
+        ids = [a.incident] if a.incident else await orch.db.run(pending_incidents, a.limit)
         for inc in ids:
             r = await orch.investigate(inc)
             print(json.dumps({"incident_id": inc, "case_id": r.case_id, "status": r.status, "reason": r.reason,
@@ -263,7 +263,8 @@ def main(argv: list[str] | None = None) -> None:
     inv.add_argument("--db", default="data/driveguard.db")
     g = inv.add_mutually_exclusive_group(required=True)
     g.add_argument("--incident")
-    g.add_argument("--all", action="store_true", help="every active incident without a case")
+    g.add_argument("--all", action="store_true",
+                   help="every new incident, plus cases a reviewer rejected (re-investigated with their comment)")
     inv.add_argument("--limit", type=int, default=10)
     inv.add_argument("--llm", choices=["scripted", "claude"], default="scripted")
     inv.add_argument("--model", default="claude-opus-5-5")

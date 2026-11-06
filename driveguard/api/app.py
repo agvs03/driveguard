@@ -1,13 +1,14 @@
-"""Read-only HTTP API for the reviewer UI (Starlette).
+"""HTTP API for the reviewer UI (Starlette).
 
-    GET /healthz                       liveness (no auth)
-    GET /metrics                       Prometheus text (no auth; aggregate labels only, bind to localhost)
-    GET /api/me                        who the token says you are
-    GET /api/cases?status=&limit=      cases visible to the token                       cases:read
-    GET /api/cases/{case_id}           case, notes, history, runs, latest report        cases:read
-    GET /api/runs/{run_id}/trace       a run's audit trace, chain check, citation map    trace:read
-    GET /api/slo                       SLO report for this database                     cases:read
-    /                                  the built UI (web/dist), if present
+    GET  /healthz                       liveness (no auth)
+    GET  /metrics                       Prometheus text (no auth; aggregate labels only, bind to localhost)
+    GET  /api/me                        who the token says you are
+    GET  /api/cases?status=&limit=      cases visible to the token                      cases:read
+    GET  /api/cases/{case_id}           case, notes, history, runs, latest report       cases:read
+    GET  /api/runs/{run_id}/trace       a run's audit trace, chain check, citation map  trace:read
+    GET  /api/slo                       SLO report for this database                    cases:read
+    POST /api/cases/{case_id}/review    approve or reject (the only write)              cases:review (human-only)
+    /                                   the built UI (web/dist), if present
 
 Access control (closes the Phase 5 residual risk "the trace has no access control"):
   * bearer JWT for audience `driveguard:api`, same verifier as the MCP servers;
@@ -16,8 +17,11 @@ Access control (closes the Phase 5 residual risk "the trace has no access contro
   * a case-bound token (claim case_id) sees only that case and its runs; a
     request for anything else gets the same 403 whether it exists or not, so
     the API is not an existence oracle;
-  * read-only: the database is opened with mode=ro; there are no write routes.
-    Approving a case stays `driveguard review` (scope cases:review).
+  * reads go through a mode=ro connection; the one write is a review, which
+    needs `cases:review` (human-only at token issue AND verify), the case
+    version the reviewer saw (optimistic locking), a JSON body and a comment.
+    Auth is a bearer header the browser never attaches on its own, so
+    cross-site requests can't ride on a session (no CSRF surface).
 
 The trace view is redacted for DISPLAY on top of the redaction at source:
 runs made with guardrails off can hold raw driver-note PII, and long strings
@@ -43,8 +47,9 @@ from starlette.responses import JSONResponse, PlainTextResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from driveguard.agents.trace import events_seen, load_spans, verify_run
-from driveguard.cases.service import get_case, list_cases
+from driveguard.agents.trace import Trace, events_seen, load_spans, verify_run
+from driveguard.cases.service import Actor, get_case, list_cases
+from driveguard.cases.service import review as service_review
 from driveguard.errors import DriveGuardError
 from driveguard.guardrails.text import redact_pii
 from driveguard.mcp_servers.auth import AUD, DriveGuardTokenVerifier, TokenClaims
@@ -57,6 +62,11 @@ from driveguard.store.db import Database
 log = logging.getLogger("driveguard.api")
 MAX_STR = 4000
 CASE_STATUSES = {"OPEN", "INVESTIGATING", "AWAITING_APPROVAL", "ESCALATED", "CLOSED"}
+MAX_COMMENT = 2000
+# Domain error code -> HTTP status. CONFLICT (stale version) and FAILED_PRECONDITION (illegal transition)
+# are both 409: the reviewer's view of the case is out of date.
+HTTP_STATUS = {"INVALID_ARGUMENT": 400, "UNAUTHENTICATED": 401, "FORBIDDEN": 403, "NOT_FOUND": 404,
+               "CONFLICT": 409, "FAILED_PRECONDITION": 409, "RATE_LIMITED": 429, "INTERNAL": 500}
 SECURITY_HEADERS = {
     # Trace content includes attacker-controlled driver notes: scripts only from our own origin, nothing inline.
     "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
@@ -127,6 +137,16 @@ def q_case(conn: sqlite3.Connection, case_id: str) -> dict[str, Any] | None:
     return display_redact(case, _driver_names(conn))
 
 
+def q_case_exists(conn: sqlite3.Connection, case_id: str) -> bool:
+    return conn.execute("SELECT 1 FROM cases WHERE case_id = ?", (case_id,)).fetchone() is not None
+
+
+def q_latest_run(conn: sqlite3.Connection, case_id: str) -> str | None:
+    row = conn.execute("SELECT run_id FROM investigation_runs WHERE case_id = ? ORDER BY started_at_ms DESC, "
+                       "rowid DESC LIMIT 1", (case_id,)).fetchone()
+    return row[0] if row else None
+
+
 def q_run_case(conn: sqlite3.Connection, run_id: str) -> tuple[bool, str | None]:
     row = conn.execute("SELECT case_id FROM investigation_runs WHERE run_id = ?", (run_id,)).fetchone()
     return (row is not None), (row[0] if row else None)
@@ -158,6 +178,7 @@ Handler = Callable[[Request, TokenClaims | None], Awaitable[Any]]
 def create_app(db_path: str, secret: str | bytes, *, static_dir: str | Path | None = None,
                now: Callable[[], float] = time.time) -> Starlette:
     db = Database(db_path, read_only=True)
+    rw = Database(db_path)
     verifier = DriveGuardTokenVerifier(secret, AUD["api"], now=now)
 
     def authenticate(request: Request) -> TokenClaims:
@@ -175,7 +196,8 @@ def create_app(db_path: str, secret: str | bytes, *, static_dir: str | Path | No
         if claims.case_id is not None and case_id != claims.case_id:
             raise FORBIDDEN_CASE
 
-    def endpoint(template: str, fn: Handler, *, auth: bool = True) -> Route:
+    def endpoint(template: str, fn: Handler, *, auth: bool = True, methods: list[str] | None = None) -> Route:
+        methods = methods or ["GET"]
         async def handle(request: Request) -> Response:
             t0 = time.perf_counter()
             status, code = 200, "OK"
@@ -189,8 +211,8 @@ def create_app(db_path: str, secret: str | bytes, *, static_dir: str | Path | No
                     status, code = e.status, e.code
                     resp = JSONResponse({"code": e.code, "message": e.message}, status_code=e.status)
                 except DriveGuardError as e:
-                    status, code = 400, e.code.value
-                    resp = JSONResponse(e.envelope(), status_code=400)
+                    status, code = HTTP_STATUS.get(e.code.value, 400), e.code.value
+                    resp = JSONResponse(e.envelope(), status_code=status)
                 except Exception:  # noqa: BLE001
                     status, code = 500, "INTERNAL"
                     log.exception("api handler crashed route=%s", template)
@@ -205,7 +227,7 @@ def create_app(db_path: str, secret: str | bytes, *, static_dir: str | Path | No
                           status=status, code=code, latency_ms=round(latency * 1000, 2))
             return resp
 
-        return Route(template, handle, methods=["GET"])
+        return Route(template, handle, methods=methods)
 
     async def healthz(_: Request, __: Any) -> Any:
         return {"ok": True}
@@ -246,6 +268,42 @@ def create_app(db_path: str, secret: str | bytes, *, static_dir: str | Path | No
             raise ApiError(404, "NOT_FOUND", "run not found")
         return await db.run(q_trace, run_id)
 
+    async def review(request: Request, c: TokenClaims) -> Any:
+        """Human approval from the UI. Same rules as `driveguard review`: scope cases:review (human-only by
+        token policy), optimistic locking via expected_version, and a human_decision span in the run's trace."""
+        require(c, "cases:review")
+        if c.role != "human":  # unreachable with a valid token (policy), kept as a second line of defence
+            raise ApiError(403, "FORBIDDEN", "only a human reviewer can review a case")
+        case_id = _uuid(request.path_params["case_id"])
+        require_case(c, case_id)
+        if "application/json" not in request.headers.get("content-type", ""):
+            raise ApiError(415, "UNSUPPORTED_MEDIA_TYPE", "send a JSON body")
+        try:
+            body = await request.json()
+        except ValueError:
+            raise ApiError(400, "INVALID_ARGUMENT", "body is not valid JSON") from None
+        if not isinstance(body, dict) or set(body) - {"decision", "comment", "expected_version"}:
+            raise ApiError(400, "INVALID_ARGUMENT", "body must be {decision, comment, expected_version}")
+        decision, comment, version = body.get("decision"), body.get("comment"), body.get("expected_version")
+        if decision not in ("approve", "reject"):
+            raise ApiError(400, "INVALID_ARGUMENT", "decision must be approve or reject")
+        if not isinstance(comment, str) or not 3 <= len(comment.strip()) <= MAX_COMMENT:
+            raise ApiError(400, "INVALID_ARGUMENT", f"comment is required (3 to {MAX_COMMENT} characters)")
+        if not isinstance(version, int) or isinstance(version, bool):
+            raise ApiError(400, "INVALID_ARGUMENT", "expected_version must be the case version you reviewed")
+        if await db.run(q_case_exists, case_id) is False:
+            raise ApiError(404, "NOT_FOUND", "case not found")
+        now_ms = int(now() * 1000)
+        updated = await rw.run(service_review, case_id, Actor(c.sub, "human"), now_ms, decision, comment.strip(),
+                               version)
+        run_id = await rw.run(q_latest_run, case_id)
+        if run_id:  # the decision becomes part of the run's tamper-evident record, as with the CLI
+            await Trace(rw, run_id, case_id=case_id, now_ms=lambda: now_ms).record(
+                "human_decision", c.sub, {"decision": decision, "comment": comment.strip()},
+                {"status": updated["status"], "version": updated["version"], "via": "api"})
+        log_event(log, "case_reviewed", case_id=case_id, decision=decision, status=updated["status"])
+        return {"case_id": case_id, "status": updated["status"], "version": updated["version"]}
+
     async def slo(_: Request, c: TokenClaims) -> Any:
         require(c, "cases:read")
         from driveguard.obs.slo import evaluate
@@ -260,6 +318,7 @@ def create_app(db_path: str, secret: str | bytes, *, static_dir: str | Path | No
         endpoint("/api/cases/{case_id}", case),
         endpoint("/api/runs/{run_id}/trace", trace),
         endpoint("/api/slo", slo),
+        endpoint("/api/cases/{case_id}/review", review, methods=["POST"]),
     ]
     if static_dir and Path(static_dir, "index.html").is_file():
         routes.append(Mount("/", StaticFiles(directory=str(static_dir), html=True), name="ui"))
@@ -267,9 +326,11 @@ def create_app(db_path: str, secret: str | bytes, *, static_dir: str | Path | No
     @contextlib.asynccontextmanager
     async def lifespan(_: Starlette) -> AsyncIterator[None]:
         await db.connect()
+        await rw.connect()  # the one write path: reviews (separate connection; reads stay mode=ro)
         try:
             yield
         finally:
+            await rw.close()
             await db.close()
 
     return Starlette(routes=routes, lifespan=lifespan, middleware=[Middleware(SecurityHeaders)])

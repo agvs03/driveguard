@@ -38,9 +38,9 @@ flowchart LR
   orch -->|case writes| cases
   orch --> val[Citation validator<br/>+ output guard]
   orch --> trace[(Audit trace<br/>append-only, hash-chained)]
-  api[Read-only API<br/>trace:read is human-only] --> store & trace
+  api[Reviewer API<br/>trace:read and cases:review are human-only] --> store & trace
   ui[React + TS reviewer UI] --> api
-  human[Human reviewer] -->|driveguard review| cases
+  human[Human reviewer] -->|approve / reject in the UI| api
   classDef srv fill:#eef,stroke:#88a
 ```
 
@@ -80,7 +80,7 @@ agent.
 ```bash
 python -m venv .venv && .venv/Scripts/activate      # Windows; on macOS/Linux: source .venv/bin/activate
 pip install -e ".[dev]"
-pytest -m "not slow"                                 # 239 fast tests; `pytest` runs all 282 (~3 min)
+pytest -m "not slow"                                 # 269 fast tests; `pytest` runs all 312 (~3 min)
 ```
 
 The whole pipeline, end to end:
@@ -98,7 +98,7 @@ The reviewer UI:
 ```bash
 cd web && npm install && npm run build && cd ..
 export DRIVEGUARD_TOKEN_SECRET=$(python -c "import secrets; print(secrets.token_urlsafe(48))")
-driveguard token --sub human:you --role human --scopes cases:read,trace:read --aud api   # paste into the UI
+driveguard token --sub human:you --role human --scopes cases:read,trace:read,cases:review --aud api   # paste into the UI
 driveguard api --db data/driveguard.db              # http://127.0.0.1:8100
 ```
 
@@ -129,16 +129,25 @@ per eval run and a $0.50 cap per case, and never prints the key.
 
 ### Accuracy and grounding
 
-Measured with Claude Opus 5.5 on the held-out `mini` split: 10 cases × 2
-samples, $4.64. Details in [EVALS.md](docs/EVALS.md).
+Measured with Claude Opus 5.5 on the held-out `test` split: 40 cases, one per
+class × 8, $8.55. Every run, including the ones that exposed my own bugs, is in
+[EVALS.md](docs/EVALS.md).
 
 | | value |
 |---|---|
-| classification accuracy | **19 / 19** (but a small sample of clear-cut synthetic cases) |
+| classification accuracy | **40 / 40**: synthetic, clear-cut cases, so read the caveats in EVALS.md |
+| wrong classifications across all 291 real-model case-samples | **0**: every miss was an escalation to a human |
 | fabricated event ids in shipped reports | **0** |
-| citation precision | 0.96 |
-| cost per case | **$0.244** |
-| latency p50 / p95 | 58 s / 73 s |
+| hallucinated numbers shipped | **0**: 3 flagged first drafts, all repaired by the validator loop |
+| citation precision | 0.84 |
+| cost per case | **$0.214** |
+| latency p50 / p95 | 48 s / 62 s |
+
+Getting there took two fixes to my own guardrails (M-32, M-33). Earlier runs
+escalated 7–13% of cases because a guardrail refused requests real Claude
+makes. The fix is the project's most useful lesson: for an LLM caller,
+*narrow* an unsafe request to its safe form rather than refusing it and
+hoping the model corrects itself.
 
 The scripted baseline scores 1.000 on 240 dev and test case-samples. That is a
 *ceiling* check of the harness, not a skill measure, because the scripted
@@ -186,12 +195,19 @@ dependency even though no event is lost.
 
 ### Total model spend for the project
 
-About **$7.30**. Everything else runs on the free scripted model.
+About **$69** of real Claude calls, mostly the full dev and test evals (291 case-samples). Everything else, including all 312 tests, runs on the free scripted model.
 
 ## What I'd flag in review
 
-The full list is in [DECISIONS.md](docs/DECISIONS.md), with 50 decisions and
-29 mistakes, each with a root cause. Some highlights:
+The full list is in [DECISIONS.md](docs/DECISIONS.md), with 52 decisions and
+33 mistakes, each with a root cause. Some highlights:
+- **M-32 and M-33.** On the full dev split, my argument-limit guardrail
+  stopped correct investigations.
+  - Claude asked for data in a reasonable way the guardrail didn't expect.
+  - Then it re-sent the identical refused request three times, even when told
+    the exact fix.
+  - Refusing was safe but stranded the case. Narrowing the request to the
+    incident window took the final test run from 4 escalations to 0.
 - **M-25.** The budget's "a call can never overshoot the cap" guarantee was
   false on real traffic.
   - The input-token estimate was 1.4–1.8× too low on UUID-heavy JSON.
@@ -211,9 +227,10 @@ The full list is in [DECISIONS.md](docs/DECISIONS.md), with 50 decisions and
   they'd plug in.
 - **Data.** Synthetic, self-labelled data, and few real-model samples
   (cost-capped), so the confidence intervals are wide.
-- **Review flow.** Approve/reject isn't in the UI. A browser write path needs
-  real reviewer identity (SSO) and CSRF protection, which a pasted bearer token
-  isn't.
+- **Reviewer identity.** Reviewers approve and reject in the UI with a minted
+  bearer token. That's real authorization (human-only scope, case version
+  check, audit trail), but not real identity: production needs SSO with
+  short-lived tokens.
 - **Credentials.** There's one shared HMAC secret across services, where
   asymmetric signing would be the fix. `/metrics` is unauthenticated (bind it
   to localhost).
@@ -233,9 +250,9 @@ driveguard/
   evals/        datasets, metrics, runner, regression gate
   redteam/      attack suite
   obs/          logs, metrics, tracing, SLOs, benchmark
-  api/          read-only reviewer API
+  api/          reviewer API (reads, plus approve/reject)
 web/            React + TypeScript reviewer UI (Vite, Vitest)
-tests/          pytest suites (282)
+tests/          pytest suites (312)
 docs/           design, decisions, evals, security, operations
 ```
 

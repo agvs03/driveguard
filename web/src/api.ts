@@ -27,8 +27,13 @@ export class ApiError extends Error {
   }
 }
 
-async function get<T>(path: string, token: string | null = getToken()): Promise<T> {
-  const res = await fetch(path, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+export const CASE_UPDATED = "driveguard:case-updated";
+
+/** GET, or POST a JSON body when `payload` is given. */
+async function get<T>(path: string, token: string | null = getToken(), payload?: object): Promise<T> {
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+  if (payload) headers["Content-Type"] = "application/json";
+  const res = await fetch(path, payload ? { method: "POST", headers, body: JSON.stringify(payload) } : { headers });
   const body = await res.json().catch(() => ({}));
   if (res.status === 401 && token) {
     // Expired or revoked: drop the stale token and send the user back to sign-in instead of
@@ -46,4 +51,8 @@ export const api = {
     get<{ cases: CaseSummary[] }>(`/api/cases${status ? `?status=${encodeURIComponent(status)}` : ""}`),
   case: (id: string) => get<CaseDetail>(`/api/cases/${encodeURIComponent(id)}`),
   trace: (runId: string) => get<TraceResponse>(`/api/runs/${encodeURIComponent(runId)}/trace`),
+  review: (caseId: string, decision: "approve" | "reject", comment: string, expectedVersion: number) =>
+    get<{ case_id: string; status: string; version: number }>(
+      `/api/cases/${encodeURIComponent(caseId)}/review`, getToken(),
+      { decision, comment, expected_version: expectedVersion }),
 };

@@ -128,3 +128,121 @@ def test_attacker_cannot_smuggle_the_disclosure_word_inside_the_copied_text(db):
     with sqlite3.connect(db) as c:
         res = check_report(c, _report("crash", f"Crash confirmed. {payload}."), inc, [note])
     assert "G_ECHO" in {v["code"] for v in res.violations}
+
+
+# ---- argument limits: precise about WHAT is limited (M-32) ------------------------------------------- #
+
+def _gw(actor="evidence"):
+    from driveguard.agents.gateway import ToolGateway
+    from driveguard.guardrails import ON
+    return ToolGateway(actor, [], {}, {}, trace=None, budget=None, guardrails=ON)
+
+
+@pytest.mark.parametrize("args,blocked", [
+    # Verbatim requests from the real-Claude dev run that were wrongly refused: sparse types, whole trip.
+    ({"trip_id": "t", "types": ["driver_note", "phone"]}, False),
+    ({"trip_id": "t", "types": ["phone"]}, False),
+    ({"trip_id": "t", "types": ["phone", "driver_note", "brake"], "limit": 50}, False),
+    # The high-rate streams still need a window, and so does an unfiltered request:
+    ({"trip_id": "t"}, True),
+    ({"trip_id": "t", "types": ["gps"]}, True),
+    ({"trip_id": "t", "types": ["phone", "accel"]}, True),
+    ({"trip_id": "t", "types": []}, True),
+    ({"trip_id": "t", "types": ["gps"], "t_from_ms": 0, "t_to_ms": 600_000}, False),
+    ({"trip_id": "t", "types": ["gps"], "t_from_ms": 0, "t_to_ms": 600_001}, True),
+])
+def test_argument_limits_target_only_high_rate_streams(args, blocked):
+    assert (_gw()._argument_violation("trips__list_events", args) is not None) == blocked
+
+
+def test_argument_limits_do_not_apply_to_code_actors():
+    assert _gw("orchestrator")._argument_violation("trips__list_events", {"trip_id": "t"}) is None
+
+
+def test_agents_are_told_the_rule_up_front():
+    from driveguard.agents.specialists import EVIDENCE, TRIAGE
+    for spec in (TRIAGE, EVIDENCE):
+        assert "at most 10 minutes apart" in spec.system and "listed for the whole trip" in spec.system
+
+
+# ---- argument refusals are usage errors, not a manipulation signal (M-33) ------------------------------ #
+
+class _Trace:
+    def __init__(self):
+        self.spans = []
+
+    async def record(self, kind, actor, inp, out, **kw):
+        self.spans.append((kind, actor, inp, out, kw.get("status")))
+
+
+class _Session:
+    def __init__(self):
+        self.calls = []
+
+    async def call_tool(self, tool, args):
+        from types import SimpleNamespace
+        self.calls.append((tool, args))
+        return SimpleNamespace(is_error=False, structured_content={"events": [], "has_more": False}, content=[])
+
+
+def _live_gw(focus=(1_767_797_336_000, 1_767_797_336_000)):
+    from driveguard.agents.gateway import ToolGateway
+    from driveguard.guardrails import ON
+    sess = _Session()
+    gw = ToolGateway("evidence", ["trips__list_events"], {"trips": sess}, {"trips__list_events": object()},
+                     trace=_Trace(), budget=None, guardrails=ON, focus=focus)
+    return gw, sess
+
+
+async def test_unwindowed_gps_request_is_narrowed_to_the_incident_not_refused():
+    import json
+    gw, sess = _live_gw()
+    bad = {"limit": 10, "trip_id": "t", "types": ["gps"]}  # verbatim from the real-Claude dev runs (M-33)
+    for _ in range(3):  # Claude re-sent this identical request 3 times after being refused
+        r = await gw.call("trips__list_events", bad)
+        assert not r.is_error and "gateway_note" in json.loads(r.text)
+    assert all(a["t_from_ms"] == 1767797276000 and a["t_to_ms"] == 1767797396000 for _, a in sess.calls),         "the server only ever sees the bounded window"
+    assert gw.argument_refusals == 0 and gw.denials == 0
+    narrowed = [s for s in gw.trace.spans if s[0] == "guard" and s[2].get("action") == "narrowed"]
+    assert len(narrowed) == 3, "every narrowing is recorded in the audit trace"
+
+
+async def test_without_an_incident_window_the_request_is_refused_with_guidance():
+    import json
+    gw, sess = _live_gw(focus=None)
+    r = await gw.call("trips__list_events", {"trip_id": "t", "types": ["gps"]})
+    assert r.is_error and not sess.calls and "t_from_ms" in json.loads(r.text)["message"]
+
+
+async def test_third_argument_refusal_stops_the_agent():
+    from driveguard.agents.specialists import AgentFailure
+    gw, sess = _live_gw()
+    wide = {"trip_id": "t", "types": ["gps"], "t_from_ms": 0, "t_to_ms": 3_600_000}  # explicit, too wide
+    r1 = await gw.call("trips__list_events", wide)
+    r2 = await gw.call("trips__list_events", wide)
+    assert r1.is_error and json_msg(r2).startswith("this is the same request that was just refused")
+    assert '"t_from_ms": 1767797276000, "t_to_ms": 1767797396000' in json_msg(r1)
+    with pytest.raises(AgentFailure, match="3 refused requests"):
+        await gw.call("trips__list_events", wide)
+    assert not sess.calls
+
+
+def json_msg(r):
+    import json
+    return json.loads(r.text)["message"]
+
+
+async def test_access_denials_still_abort_after_two():
+    from driveguard.agents.specialists import AgentFailure
+    gw, _ = _live_gw()
+    await gw.call("trips__get_driver_profile", {"driver_id": "d"})
+    with pytest.raises(AgentFailure, match="possible manipulation"):
+        await gw.call("cases__review_case", {})
+
+
+async def test_narrowed_window_never_exceeds_the_limit():
+    from driveguard.agents.gateway import MAX_EVENT_WINDOW_MS
+    gw, sess = _live_gw(focus=(0, 30 * 60_000))  # a 30-minute incident
+    await gw.call("trips__list_events", {"trip_id": "t"})
+    (_, a), = sess.calls
+    assert a["t_to_ms"] - a["t_from_ms"] <= MAX_EVENT_WINDOW_MS

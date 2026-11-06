@@ -37,7 +37,8 @@ def _policy_constants() -> set[tuple[str, float]]:
 
 _THRESHOLD_WORDS = re.compile(
     r"threshold|policy|above|below|at least|>=|<=|under|over|exceed|approach|rules? out|pattern|criteri|"
-    r"required|needed|limit|cutoff|cut-off|definition|would need|never|not\b|no\b|instead|rather than|remain",
+    r"required|needed|limit|cutoff|cut-off|definition|would need|never|not\b|no\b|instead|rather than|remain|"
+    r"neither|nor\b|near\b",  # "Neither indicates ... an impact near 4 g" (real Claude dev run, M-32)
     re.IGNORECASE)
 
 

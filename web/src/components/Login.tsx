@@ -30,7 +30,8 @@ export function Login({ onSignedIn }: { onSignedIn: (me: Me) => void }) {
         <p className="muted">
           Paste a reviewer token for the API. Create one with:
         </p>
-        <pre className="cmd">driveguard token --sub human:you --role human --scopes cases:read,trace:read --aud api</pre>
+        <pre className="cmd">driveguard token --sub human:you --role human --scopes cases:read,trace:read,cases:review --aud api</pre>
+        <p className="muted small">Leave out <code>cases:review</code> for a read-only reviewer.</p>
         <label htmlFor="token">Bearer token</label>
         <textarea id="token" rows={4} value={token} onChange={(e) => setTokenText(e.target.value)}
           spellCheck={false} autoComplete="off" />

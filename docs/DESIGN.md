@@ -258,7 +258,7 @@ transport, which can carry bearer tokens; tests use the in-memory transport.
     lets us test failure paths a real model rarely hits on demand.
 
 ### 4.7 API and UI (Phase 6)
-- **API** (`driveguard/api/app.py`, Starlette): read-only.
+- **API** (`driveguard/api/app.py`, Starlette): reads, plus one write, the human review.
   - `GET /api/cases`, `/api/cases/{id}` (case, history, notes, runs, latest
     report with validation);
   - `/api/runs/{id}/trace` (spans, hash-chain check, citation → tool-call map);
@@ -271,7 +271,7 @@ transport, which can carry bearer tokens; tests use the in-memory transport.
     returned it;
   - the agents' reasoning as a timeline of phases and steps from the audit
     trace, with untrusted driver text flagged.
-  - Approve/reject is **not** in the UI (D-48).
+  - Approve/reject in the UI (`POST /api/cases/{id}/review`, scope `cases:review`; D-51). Rejected cases are re-investigated with the comment (D-52).
 - **Observability** (`driveguard/obs/`): JSON logs, Prometheus-format metrics,
   W3C-traceparent spans, SLO evaluation. See docs/OPERATIONS.md.
 
@@ -463,7 +463,7 @@ Recorded here so the doc stays honest. The reasoning is in DECISIONS.md.
 | 3 | Specialists write their findings to the case | **Only the orchestrator writes to cases**, with its own case-bound token. Specialists get read-only tokens and never touch case state. | D-26 |
 | 3 | Citation validator checks findings | Also checks every number in the **summary**. Quoted policy thresholds are exempt only when threshold wording sits next to them. | D-27 |
 | 3 | Trace in one table | Separate tables: `audit_trace` (append-only via triggers, hash-chained per run), `investigation_runs` and `reports` (migration v3) | D-28 |
-| 6 | FastAPI with `POST /cases/{id}/decision`; UI approve/reject panel | Starlette (already a dependency), **read-only** API and UI. Reviews stay in the CLI until there's a real reviewer identity and CSRF protection. | D-48 |
+| 6 | FastAPI with `POST /cases/{id}/decision`; UI approve/reject panel | Starlette (already a dependency). Read-only at first; approve/reject added once it was clear bearer-header auth has no CSRF surface. | D-48, D-51 |
 | 6 | SLOs as percentile targets | SLOs as good/valid ratios with error budgets, evaluated from durable stores (works on stored eval runs) plus a local load benchmark | D-47 |
 | 2 | `cases.incident_id` FK to incidents, which re-detection deleted | Re-detection now **supersedes** incidents instead of deleting them; schema migrations via `PRAGMA user_version` | D-16 |
 

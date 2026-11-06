@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api";
+import { api, CASE_UPDATED } from "../api";
 import type { CaseSummary } from "../types";
 import { fmtTime, shortId } from "../steps";
 import { ErrorBox, StatusPill } from "./common";
@@ -11,14 +11,21 @@ export function CaseList({ selected, onSelect }: { selected: string | null; onSe
   const [cases, setCases] = useState<CaseSummary[] | null>(null);
   const [error, setError] = useState<unknown>(null);
 
+  const [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    const bump = () => setRefresh((n) => n + 1);
+    window.addEventListener(CASE_UPDATED, bump);
+    return () => window.removeEventListener(CASE_UPDATED, bump);
+  }, []);
+
   useEffect(() => {
     let live = true;
-    setCases(null);
+    if (refresh === 0) setCases(null);
     api.cases(status || undefined)
       .then((r) => live && setCases(r.cases))
       .catch((e) => live && setError(e));
     return () => { live = false; };
-  }, [status]);
+  }, [status, refresh]);
 
   return (
     <nav className="case-list" aria-label="Cases">

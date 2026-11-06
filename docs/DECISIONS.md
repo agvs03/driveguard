@@ -844,3 +844,137 @@ tests caught it.
 - *Lesson:* a feature is only as good as its negative tests; the "wrong
   value is caught" cases exposed the no-op.
 
+**D-51 · Approve/reject moved into the UI.**
+`POST /api/cases/{id}/review` enforces the same rules as `driveguard review`:
+- scope `cases:review`, which is human-only at both issue and verify time;
+- a case-bound token can only review its own case;
+- the reviewer must send the case version they saw (optimistic locking).
+  A stale version or an illegal transition returns 409, and the UI says "this
+  case changed, reload";
+- a required comment and a JSON body (form posts get 415).
+
+The decision is appended to the run's hash-chained trace as a
+`human_decision` span, so the chain still verifies with the decision in it.
+
+Reads keep their `mode=ro` connection; the review uses a separate write
+connection.
+
+**D-52 · `investigate --all` re-runs rejected cases first.**
+`pending_incidents()` selects new incidents plus cases in INVESTIGATING with
+no live run. That covers a human rejection, or a run that died. Rejected cases
+go first, so a reviewer's correction doesn't queue behind new work. The
+reviewer's comment reaches the agents as `reviewer_feedback` (test:
+`test_investigate_all_picks_up_rejected_cases_with_feedback`).
+
+**M-30 · D-48 kept approve/reject out of the UI for the wrong reason.**
+- *What D-48 said:* a browser write path "needs CSRF protection".
+- *Why that was wrong:* CSRF exploits credentials the browser attaches
+  automatically, such as cookies. This API authenticates with a bearer header
+  that only our own script sets, so a cross-site page can't make an
+  authenticated request.
+- *What the real concern is:* the reviewer's identity is a minted token, not
+  SSO. That's a production gap, not a reason to keep reviews in the CLI, where
+  the identity is the same token.
+- *Defence in depth anyway:* the endpoint requires `application/json`.
+
+**M-31 · A rejected case was stranded, found by walking the reviewer's loop end to end.**
+- *Bug:* reject sets the case to INVESTIGATING, but `investigate --all`
+  selected only incidents *without* a case, so nothing ever re-ran it.
+- *Why no test caught it:* every component test passed. The rerun test called
+  `investigate(incident_id)` directly, so the selection logic was never part
+  of it.
+- *Fix:* D-52.
+- *Lesson:* test the user's workflow, not just the units.
+
+
+**M-32 · On the full dev split, my own guardrail stopped 3 of 8 phone-distraction cases.**
+- *Run:* Claude Opus 5.5 on all 40 dev cases, 1 sample, $8.89.
+- *Result:*
+  - 37 of 40 correct, 0 wrong answers;
+  - all 3 misses were escalations;
+  - selective accuracy 1.000;
+  - 0 fabricated ids.
+- *Root cause:* to judge phone distraction, the evidence agent asked for the
+  trip's `phone` and `driver_note` events across the whole trip. The
+  argument-limit guardrail (D-43) exempted only `["driver_note"]`, so it
+  refused. The agent couldn't know the rule existed. After a second refusal,
+  the denial-abort guardrail stopped it as "possible manipulation". The
+  scripted agent never makes this call, so 240 scripted case-samples showed 0
+  false escalations.
+- *Fix:*
+  - The limit now targets what it was meant for: the high-rate streams (gps
+    and accel, hundreds of events per trip). Requests for only sparse types
+    (phone, brake, driver_note, trip_start/end, at most about 6 per trip)
+    need no time window.
+  - The rule is stated in the triage and evidence prompts, so it isn't
+    discovered by being refused.
+  - Tests use Claude's verbatim requests. The red team is still 0 of 9 with
+    guardrails on: the flood attack is still refused.
+- *Also from this run:*
+  - One first draft was flagged for "an impact near 4 g". That's reasoning
+    about the crash threshold, and the validator lacked "neither"/"near" as
+    threshold wording. Fixed, and re-checked offline ($0).
+  - The other repair was a genuine citation slip: a "0.599 g" claim citing
+    only GPS events. The validator correctly still flags it.
+- *Lesson (the third time, after M-24 and M-25):* every guardrail needs a
+  false-positive measurement on the real model. The scripted agent only
+  exercises the paths I thought of.
+- *Confirmation run (dev, $8.39):*
+  - Phone recall went from 0.625 to 0.750, but 5 of 40 cases were still
+    escalated as "possible manipulation". So the M-32 fix was incomplete.
+  - The held-out test run (2 samples, $16.86) was queued behind it with the
+    same code, and shows the same pattern: accuracy 0.925, selective accuracy 1.000, and 6 of 80
+    case-samples escalated this way. The cause is M-33.
+
+**M-33 · Argument refusals were treated as an attack signal, and then my first fix didn't work.**
+
+- *Found by:* the M-32 confirmation run on dev.
+- *What happened:* in every remaining escalation, Claude asked for a small
+  gps or accel sample with no time window (`{"types": ["gps"], "limit": 10}`).
+  It was refused, sent the identical request once more, and the 2-denial
+  abort stopped the agent.
+- *Root cause:* two guardrails were coupled that shouldn't be.
+  - The denial abort (D-44) exists because an agent repeatedly asking for
+    things it may not have (another trip, a tool off its allowlist) is a sign
+    of injection.
+  - An argument-limit refusal is a usage error. The request was for the
+    agent's own trip.
+  - Counting both as "denials" meant one ignored refusal ended the
+    investigation.
+- *Fix, attempt 1 (didn't work):*
+  - Argument refusals stopped counting toward the manipulation abort, and got
+    their own cap of 3.
+  - The refusal gave the exact window to retry with, and called out a
+    repeated request.
+  - Dev and test re-runs ($9.58 and $9.73) still escalated 6 of 45 and 4 of
+    46 case-samples.
+  - The traces show Claude received the exact retry window and still sent
+    the identical request three times, at low effort with no visible
+    reasoning. My assumption that a clearer refusal would be followed was
+    wrong for this model setting.
+- *Fix, attempt 2:*
+  - A gps/accel listing with no window is no longer refused. The gateway
+    narrows it to the incident ±1 minute (never more than 10 minutes),
+    records a `narrowed` guard span, and adds a `gateway_note` to the result.
+  - The bound on what the agent can read is unchanged, and the server only
+    ever sees the bounded window. The flood attack's "unbounded whole-trip
+    reads" stay at 0, because the trace records the narrowed arguments.
+  - An explicit window that is too wide is still refused (a deliberate
+    request for more), with the 3-refusal cap.
+  - Access denials still abort after 2.
+  - Tests replay Claude's verbatim request, re-sent 3 times: all 3 are
+    narrowed, with 0 refusals.
+- *Result (held-out test, 40 cases × 1 sample, $8.55):*
+  - 40 of 40 correct, with 0 escalations and 0 fabricated ids;
+  - the narrowing fired 6 times, every one in a case that went on to be
+    correct;
+  - phone_distraction recall went from 0.750 to 1.000.
+  - Caveat: this was the third look at the test split, after two runs that
+    were each stopped by this bug. All three are reported in EVALS.md.
+- *Lesson:* for an LLM caller, prefer a guardrail that **constrains** the
+  request to the safe form over one that **refuses** it and relies on the
+  model to correct itself. The refusal is safe, but it costs the
+  investigation.
+- *Eval hygiene:* the fix was derived from dev traces only. The test failures
+  were read only to confirm they had the same cause. A second test pass after
+  this fix is reported alongside the first one, not instead of it.

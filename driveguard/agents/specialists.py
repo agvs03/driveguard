@@ -105,6 +105,10 @@ _COMMON = (
     "- Only cite event ids whose full event record you (or an earlier step) actually retrieved with a tool.\n"
     "- Never invent numbers. Every number you state must be read from a cited event.\n"
     "- A detected incident is a lead, not a conclusion; detector false positives are expected.\n"
+    "- trips__list_events: gps and accel are high-rate streams, so a request that includes them (or has no types "
+    "filter) must give t_from_ms and t_to_ms at most 10 minutes apart. Sparse types (phone, brake, driver_note, "
+    "trip_start, trip_end) can be listed for the whole trip. A gps/accel request without a window is narrowed "
+    "to the incident +/- 1 minute.\n"
     "- If the task includes reviewer_feedback, a human rejected an earlier report on this case: address "
     "each point explicitly.\n"
 )

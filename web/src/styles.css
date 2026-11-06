@@ -117,6 +117,17 @@ dd { margin: 0; font-weight: 600; }
 .cite-missing { background: var(--bad-soft); color: var(--bad); }
 .warnings { margin-top: 8px; }
 
+/* review */
+.review-panel { border-color: var(--accent); }
+.review-panel label { display: block; font-size: 12px; font-weight: 600; margin: 4px 0; }
+.review-panel textarea { width: 100%; }
+.review-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.btn { border: none; border-radius: 6px; padding: 8px 14px; font-weight: 600; color: white; }
+.btn[disabled] { opacity: 0.45; cursor: default; }
+.btn.approve { background: var(--good); }
+.btn.reject { background: var(--bad); }
+@media (prefers-color-scheme: dark) { .btn { color: #0d1117; } }
+
 /* history and notes */
 .history, .notes { padding-left: 18px; margin: 0; }
 .history li, .notes li { margin-bottom: 6px; overflow-wrap: anywhere; }

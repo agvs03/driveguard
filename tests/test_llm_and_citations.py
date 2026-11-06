@@ -198,8 +198,13 @@ async def test_workspace_header_is_sent_when_configured(monkeypatch):
      ["a1"], set()),
     ("Vertical peaks stayed near 1 g. The vehicle recovered to 13.4 m/s instead of remaining at 0 m/s.",
      ["a1", "g1"], set()),
+    # Verbatim from the real-Claude dev run (M-32):
+    ("In the same accelerometer sample, ay_peak was 0.0979 g, well below the 0.45 g lateral threshold for a near "
+     "miss. Neither indicates a swerve or an impact near 4 g.", ["a1"], set()),  # 0.0979 ~ a1's ay 0.1 (tolerance)
+    ("Neither indicates a swerve or an impact near 4 g.", ["a1"], set()),
     # ...while a real misstatement of a policy-valued number is still caught:
     ("The vehicle was travelling at 0 m/s.", ["g1"], {"E_NUMBER"}),
+    ("The impact reached 4 g.", ["a1"], {"E_NUMBER"}),
 ])
 def test_validator_does_not_flag_reasoning_about_policy_thresholds(claim, ids, expected):
     assert _codes(_report((claim, ids)))[0] == expected

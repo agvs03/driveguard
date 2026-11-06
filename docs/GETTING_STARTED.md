@@ -36,7 +36,7 @@ Activate the environment:
 
 ```bash
 pip install -e ".[dev]"
-pytest -m "not slow"          # should end with "239 passed"
+pytest -m "not slow"          # should end with "269 passed"
 ```
 
 ## 2. Generate data and ingest it
@@ -81,7 +81,7 @@ characters works.
 Mint a reviewer token, then start the API:
 
 ```bash
-driveguard token --sub human:you --role human --scopes cases:read,trace:read --aud api --ttl 28800
+driveguard token --sub human:you --role human --scopes cases:read,trace:read,cases:review --aud api --ttl 28800
 driveguard api --db data/driveguard.db
 ```
 
@@ -89,7 +89,11 @@ Open http://127.0.0.1:8100 and paste the token. Pick a case, then:
 - **click a citation** under a finding to see the exact sensor event and the
   tool call that returned it;
 - **expand the timeline steps** to see every model call, tool call and check
-  the agents made.
+  the agents made;
+- **decide:** write a comment and click *Approve and close*, or *Reject,
+  re-investigate*. A rejected case is picked up by the next
+  `driveguard investigate --all`, and the agents get your comment. Leave
+  `cases:review` out of the token for a read-only reviewer.
 
 ## 5. Try the safety and quality tooling
 

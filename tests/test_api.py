@@ -167,3 +167,85 @@ def test_display_redaction_leaves_ids_and_numbers_alone():
     assert "Riley" not in out["text"] and "555-123" not in out["text"]
     assert len(out["long"]) < 4200 and "clipped for display" in out["long"]
     assert json.dumps(out)
+
+
+# ---- reviews from the UI ------------------------------------------------------------------------------ #
+
+REVIEWER = ("cases:read", "trace:read", "cases:review")
+
+
+async def _post_review(c, case_id, token, **body):
+    return await c.post(f"/api/cases/{case_id}/review", headers=H(token), json=body)
+
+
+async def test_human_reviewer_can_approve_and_the_decision_is_in_the_trace(client):
+    c, a, _, db = client
+    t = tok(scopes=REVIEWER)
+    case = (await c.get(f"/api/cases/{a.case_id}", headers=H(t))).json()
+    assert case["status"] == "AWAITING_APPROVAL"
+    r = await _post_review(c, a.case_id, t, decision="approve", comment="Evidence checks out.",
+                           expected_version=case["version"])
+    assert r.status_code == 200 and r.json()["status"] == "CLOSED"
+    tr = (await c.get(f"/api/runs/{a.run_id}/trace", headers=H(t))).json()
+    last = tr["spans"][-1]
+    assert last["kind"] == "human_decision" and last["actor"] == "human:t" and last["input"]["decision"] == "approve"
+    assert tr["integrity"]["ok"], "the decision extends the hash chain without breaking it"
+    hist = (await c.get(f"/api/cases/{a.case_id}", headers=H(t))).json()["history"][-1]
+    assert hist["action"] == "approve" and hist["actor_role"] == "human" and hist["actor_sub"] == "human:t"
+
+
+async def test_reject_sends_the_case_back_for_investigation(client):
+    c, a, _, _ = client
+    t = tok(scopes=REVIEWER)
+    v = (await c.get(f"/api/cases/{a.case_id}", headers=H(t))).json()["version"]
+    r = await _post_review(c, a.case_id, t, decision="reject", comment="Cite the GPS stop.", expected_version=v)
+    assert r.status_code == 200 and r.json()["status"] == "INVESTIGATING"
+
+
+async def test_review_needs_the_review_scope(client):
+    c, a, _, _ = client
+    r = await _post_review(c, a.case_id, tok(), decision="approve", comment="ok ok", expected_version=1)
+    assert r.status_code == 403 and "cases:review" in r.json()["message"]
+    with pytest.raises(ValueError, match="agent tokens may not carry"):
+        tok(role="agent", scopes=("cases:review",), case_id=a.case_id, trip_ids=["t"])
+    with pytest.raises(ValueError, match="only human tokens"):
+        tok(role="service", scopes=("cases:review",))
+
+
+async def test_stale_version_and_illegal_transition_are_409(client):
+    c, a, _, _ = client
+    t = tok(scopes=REVIEWER)
+    v = (await c.get(f"/api/cases/{a.case_id}", headers=H(t))).json()["version"]
+    stale = await _post_review(c, a.case_id, t, decision="approve", comment="ok ok", expected_version=v - 1)
+    assert stale.status_code == 409 and stale.json()["code"] == "CONFLICT"
+    assert (await _post_review(c, a.case_id, t, decision="approve", comment="ok ok", expected_version=v)).status_code == 200
+    again = await _post_review(c, a.case_id, t, decision="approve", comment="ok ok", expected_version=v + 1)
+    assert again.status_code == 409 and again.json()["code"] == "FAILED_PRECONDITION", "a closed case can't be re-approved"
+
+
+@pytest.mark.parametrize("body,code", [
+    ({"decision": "close", "comment": "ok ok", "expected_version": 1}, 400),
+    ({"decision": "approve", "comment": "", "expected_version": 1}, 400),
+    ({"decision": "approve", "comment": "ok ok", "expected_version": "1"}, 400),
+    ({"decision": "approve", "comment": "ok ok", "expected_version": True}, 400),
+    ({"decision": "approve", "comment": "ok ok", "expected_version": 1, "status": "CLOSED"}, 400),
+])
+async def test_review_body_is_validated(client, body, code):
+    c, a, _, _ = client
+    r = await c.post(f"/api/cases/{a.case_id}/review", headers=H(tok(scopes=REVIEWER)), json=body)
+    assert r.status_code == code
+
+
+async def test_review_rejects_non_json_and_respects_case_binding(client):
+    c, a, b, _ = client
+    t = tok(scopes=REVIEWER)
+    form = await c.post(f"/api/cases/{a.case_id}/review",
+                        headers={**H(t), "content-type": "application/x-www-form-urlencoded"},
+                        content="decision=approve&comment=ok&expected_version=1")
+    assert form.status_code == 415, "a cross-site HTML form can't produce a JSON request"
+    bound = tok(scopes=REVIEWER, case_id=a.case_id)
+    other = await _post_review(c, b.case_id, bound, decision="approve", comment="ok ok", expected_version=1)
+    missing = await _post_review(c, OTHER_UUID, bound, decision="approve", comment="ok ok", expected_version=1)
+    assert other.status_code == missing.status_code == 403 and other.json() == missing.json()
+    assert (await _post_review(c, OTHER_UUID, t, decision="approve", comment="ok ok",
+                               expected_version=1)).status_code == 404

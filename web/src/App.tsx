@@ -63,7 +63,8 @@ export default function App() {
             <CaseView key={caseId} caseId={caseId} runId={route.runId} me={me}
               onSelectRun={(r) => { window.location.hash = `#/cases/${caseId}?run=${r}`; }} />
           ) : (
-            <Empty>Select a case. Cases awaiting approval need a reviewer's decision (made with <code>driveguard review</code>).</Empty>
+            <Empty>Select a case. Cases awaiting approval or escalated need a reviewer's decision
+              {me.scopes.includes("cases:review") ? "." : <> (your token is read-only: it lacks <code>cases:review</code>).</>}</Empty>
           )}
         </main>
       </div>
